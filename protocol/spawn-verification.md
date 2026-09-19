@@ -11,22 +11,21 @@ live on Arweave.
 ## Genesis spawns (locked 2026-09-18)
 
 ICU spawns ARE genesis. Every spawn is a FuX being born — not an appearance,
-a birth:
+a birth. This matches the protocol's own language: Law I, "Irreversible
+Creation — once spawned, forever."
 
-- Each spawn runs the full genesis ceremony: the seven fragment slots are
-  committed (Board, Grip, TruX, Hubs, Core, aR, Aura), the genome is
-  derived, the soulbound Token-2022 identity is minted, the FuxEntity PDA
-  is created, the genesis record goes to Arweave, and the anchor lands on
-  Solana.
-- The FuX is born **wild and unbound** — no hunter at birth.
-- The first valid find claim (the 6 checks) bonds the hunter: the soulbound
-  identity binds to the finder's HunterAccount. **Finding is bonding.**
+- Each spawn commits the seven fragment slots (Board, Grip, TruX, Hubs,
+  Core, aR, Aura), scattered hidden in the hunt zone, and derives the
+  genome. The FuX is born **wild and unbound** — no hunter at birth.
+- The first valid find claim (the 6 checks) assembles the hunter's board:
+  **genesis and bonding fire atomically** — the soulbound Token-2022
+  identity is minted, the FuxEntity PDA is created, and the identity binds
+  to the finder's HunterAccount in one ceremony. **Finding is bonding.**
 - The 70,000 cap is enforced by the program's genesis counter — spawn
   70,001 is rejected. Every spawn burns one birth.
-- Protocol note: this amends Bible Law I ("a FuX is created only after the
-  hunter's seven-fragment hunt"). Wild genesis reverses it: birth first,
-  hunter decided by the find. This amendment must be ratified before the
-  mainnet protocol freeze.
+- No Bible amendment needed: the seven slots are valid at spawn (Law I
+  satisfied), and the hunter is decided by the find, exactly as the hunt
+  promises.
 
 ## The loop
 
