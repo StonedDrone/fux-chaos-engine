@@ -100,6 +100,19 @@ and shapes the next drop:
 Jay can also stir the hunt by hand — touch the box, play music — and watch
 the next spawns come out wilder.
 
+## The Hunt Loop — find MiiE, win prizes (locked 2026-09-18)
+
+The spawned FuX are not just hiding. Each lil FuX has a mission: **find
+MiiE and FuXZero.**
+
+- **MiiE** = Mixed Immersive Interactive Experience = Jay himself, IRL.
+- **FuXZero** = Jay's Agent Zero.
+- The loop: FuX spawn wild (genesis) → hunters find the lil FuX → the lil
+  FuX are all seeking MiiE → the trail leads hunters to Jay IRL →
+  **whoever finds Jay wins the prizes.**
+- The Chaos Engine (the prime, in the Mirror Box) feels every step: every
+  spawn, every find, every hunter closing in on MiiE.
+
 ## Privacy (non-negotiable)
 
 No raw coordinates, routes, sensor traces, or device identifiers on Solana
