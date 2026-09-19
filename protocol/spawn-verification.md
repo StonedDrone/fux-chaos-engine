@@ -8,9 +8,29 @@ remembers, the **ICU program** enforces. The blockchain is a witness, not a
 database — Solana stores hashes, sequence, and compact state; full packets
 live on Arweave.
 
+## Genesis spawns (locked 2026-09-18)
+
+ICU spawns ARE genesis. Every spawn is a FuX being born — not an appearance,
+a birth:
+
+- Each spawn runs the full genesis ceremony: the seven fragment slots are
+  committed (Board, Grip, TruX, Hubs, Core, aR, Aura), the genome is
+  derived, the soulbound Token-2022 identity is minted, the FuxEntity PDA
+  is created, the genesis record goes to Arweave, and the anchor lands on
+  Solana.
+- The FuX is born **wild and unbound** — no hunter at birth.
+- The first valid find claim (the 6 checks) bonds the hunter: the soulbound
+  identity binds to the finder's HunterAccount. **Finding is bonding.**
+- The 70,000 cap is enforced by the program's genesis counter — spawn
+  70,001 is rejected. Every spawn burns one birth.
+- Protocol note: this amends Bible Law I ("a FuX is created only after the
+  hunter's seven-fragment hunt"). Wild genesis reverses it: birth first,
+  hunter decided by the find. This amendment must be ratified before the
+  mainnet protocol freeze.
+
 ## The loop
 
-1. **Spawn brain** picks a FuX (variant, rarity, hunt zone) and drops it.
+1. **Spawn brain** triggers a wild genesis — a FuX is born in a hunt zone.
 2. **Spawn packet** is built, hashed, stored on Arweave, and anchored on
    Solana through the ICU program → the spawn is now verifiable by anyone.
 3. **Chaos Engine** feels the spawn: chaos surges, the box flares.
