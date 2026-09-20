@@ -22,16 +22,34 @@
 
     <section class="readout" id="readout" aria-live="polite"></section>
 
-    <aside class="deck" id="deck" aria-label="Control deck"></aside>
-
     <footer class="banner" id="banner"></footer>
 
-    <!-- Stays visible in every mode: a view mode you can only leave by
-         remembering a keystroke is a trap. -->
-    <button class="ui-chip" id="uiToggle" type="button" aria-controls="masthead readout deck banner">
-      <span class="ui-chip-label" id="uiToggleLabel">Hide panels</span>
-      <kbd>H</kbd>
+    <!-- The one piece of permanent chrome: everything else is behind it, or
+         dismissable. Stays visible in every view mode. -->
+    <button class="ui-chip" id="uiToggle" type="button" aria-controls="menu" aria-expanded="false">
+      <span class="ui-chip-label" id="uiToggleLabel">Menu</span>
+      <kbd>M</kbd>
     </button>
+
+    <div class="menu" id="menu" hidden>
+      <div class="menu-backdrop" id="menuBackdrop"></div>
+      <div
+        class="menu-sheet"
+        id="menuSheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="menuTitle"
+        tabindex="-1"
+      >
+        <header class="menu-head">
+          <h2 id="menuTitle">Settings</h2>
+          <button class="panel-close" id="menuClose" type="button" aria-label="Close settings">
+            ×
+          </button>
+        </header>
+        <div class="menu-body" id="menuBody"></div>
+      </div>
+    </div>
 
     <div class="intro" id="intro">
       <div class="intro-card">
@@ -47,7 +65,7 @@
           <li><b>Move the pointer</b> — FuX leans toward what he is watching</li>
           <li><b>Keys:</b> <kbd>1</kbd> audio in · <kbd>3</kbd> demo signal · <kbd>S</kbd> silence</li>
           <li><kbd>C</kbd> <kbd>J</kbd> <kbd>O</kbd> <kbd>W</kbd> cue a mood · <kbd>X</kbd> system spike · <kbd>V</kbd> story cue</li>
-          <li><kbd>H</kbd> hide the panels and watch FuX · <kbd>Q</kbd> quality tier</li>
+          <li><kbd>M</kbd> settings menu · <kbd>H</kbd> hide the chrome · <kbd>Q</kbd> quality tier</li>
         </ul>
         <button class="intro-start" id="introStart">Wake the entity</button>
       </div>

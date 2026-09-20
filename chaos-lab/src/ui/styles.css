@@ -93,8 +93,7 @@ body {
 /* ------------------------------------------------------------------ */
 /* Panels                                                              */
 /* ------------------------------------------------------------------ */
-.readout,
-.deck {
+.readout {
   position: fixed;
   z-index: 4;
   background: var(--ink-2);
@@ -115,22 +114,11 @@ body {
   overscroll-behavior: contain;
 }
 
-.deck {
-  bottom: 18px;
-  left: 18px;
-  width: 296px;
-  max-height: calc(100vh - 180px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.readout::-webkit-scrollbar,
-.deck::-webkit-scrollbar {
+.readout::-webkit-scrollbar {
   width: 8px;
 }
 
-.readout::-webkit-scrollbar-thumb,
-.deck::-webkit-scrollbar-thumb {
+.readout::-webkit-scrollbar-thumb {
   background: var(--edge-strong);
   border-radius: 8px;
 }
@@ -729,6 +717,179 @@ kbd {
 /* Compact layout                                                      */
 /* ------------------------------------------------------------------ */
 /* ------------------------------------------------------------------ */
+/* Panel head — every window is dismissable                            */
+/* ------------------------------------------------------------------ */
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.panel-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.panel-close {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text-faint);
+  background: transparent;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.panel-close:hover,
+.panel-close:focus-visible {
+  color: var(--text);
+  border-color: var(--violet);
+  background: rgba(255, 255, 255, 0.04);
+  outline: none;
+}
+
+/* A checkbox row, used by the "on screen" group. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 2px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check:hover {
+  color: var(--text);
+}
+
+.check input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.check input:checked {
+  background: var(--violet);
+  border-color: var(--violet);
+}
+
+.check input:checked::after {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 7px;
+  margin: 2px auto 0;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.check input:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Settings sheet — all of the controls, over the stage                */
+/* ------------------------------------------------------------------ */
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.menu[hidden] {
+  display: none;
+}
+
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 2, 10, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.menu-sheet {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(84vh, 780px);
+  display: flex;
+  flex-direction: column;
+  background: var(--ink-2);
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  outline: none;
+  animation: sheet-in 160ms ease;
+}
+
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.menu-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.menu-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 18px 18px;
+}
+
+/* The deck fills two columns once there is room, so the sheet stays short. */
+.menu-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0 22px;
+  align-items: start;
+}
+
+@media (max-width: 560px) {
+  .menu-sheet {
+    max-height: 88vh;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Panel modes — hide the chrome and just watch FuX                    */
 /* ------------------------------------------------------------------ */
 .ui-chip {
@@ -769,14 +930,11 @@ body[data-panels="hidden"] .ui-chip {
   opacity: 0.75;
 }
 
-/* The two side panels, and then everything. */
-body[data-panels="compact"] .readout,
-body[data-panels="compact"] .deck,
-body[data-panels="hidden"] .readout,
-body[data-panels="hidden"] .deck,
-body[data-panels="hidden"] .masthead,
-body[data-panels="hidden"] .banner,
-body[data-panels="hidden"] .intro {
+/* Every region answers to its own attribute, which the view state writes.
+   The intro overlay is the one exception: it is dismissed by its own button. */
+body[data-region-masthead="off"] .masthead,
+body[data-region-readout="off"] .readout,
+body[data-region-banner="off"] .banner {
   display: none;
 }
 
@@ -794,24 +952,23 @@ body[data-panels="hidden"] .intro {
 }
 
 @media (max-width: 900px) {
-  .readout,
-  .deck {
-    width: calc(50vw - 26px);
-  }
   .masthead .tagline {
     display: none;
   }
 }
 
 @media (max-width: 680px) {
+  /* The readout moves out of the way of the launcher rather than off screen;
+     it is closable either way. */
   .readout {
     top: auto;
-    bottom: 18px;
+    bottom: 62px;
     right: 18px;
-    width: calc(100vw - 36px);
+    left: 18px;
+    width: auto;
     max-height: 34vh;
   }
-  .deck {
-    display: none;
+  .menu-body {
+    grid-template-columns: 1fr;
   }
 }

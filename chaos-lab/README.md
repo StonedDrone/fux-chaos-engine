@@ -51,25 +51,33 @@ value is in the numbers, the timing, and the behaviour, which port directly.
 | `T` `P` `X` `V` | Inject Touch · Proximity · System spike · Voice |
 | `R` | Record a take · `E` to export |
 | `Q` | Cycle quality tier |
+| `M` | Settings menu — every control, over the stage · `Esc` closes it |
 | `H` | Hide the chrome: panels → everything → back · `Space` pause |
 
 The keyboard shortcuts deliberately echo the WaveScope workflow in the README,
 so the lab and the audition tool feel like one pipeline: `3` for the silent
 demo signal, `1` to tap audio, `R` to record a reference take.
 
-### Getting the chrome out of the way
+### The chrome, and the settings menu
 
-The button in the bottom-right corner and the `H` key do the same thing, and
-both name what the next press will do:
+The page opens with almost nothing on it: FuX, the live readout, and one button
+in the corner. Every control lives in the settings sheet behind that button
+(`M`, or `Esc` to close it), so the entity is not competing with a wall of
+sliders — which is the same argument the build kit makes about the actor's own
+public controls.
 
-| Mode | On screen |
+| Where | What |
 |---|---|
-| full | everything |
-| compact | the masthead, the message bar, and the chip — the two side panels are gone |
-| hidden | FuX, and the chip |
+| Corner button / `M` | the settings sheet: on-screen toggles, signal source, bridge, moods, signals, observer, entity, safety, quality, take |
+| Readout's × | closes the readout; the sheet's **Live readout** box brings it back |
+| `H` | cycles the presets: everything → panels hidden → just FuX → back |
 
-The chip stays visible in every mode on purpose. A view mode you can only leave
-by remembering a keystroke is a trap, not a feature.
+The sheet's "On screen" group is the same state the `H` key drives, rendered as
+checkboxes, so the ticks always describe the page you are looking at. **Just
+FuX** clears the masthead, the readout and the message bar in one press;
+**Show all** puts them back. The launcher stays visible in every mode on
+purpose — a view mode you can only leave by remembering a keystroke is a trap,
+not a feature.
 
 ### Hearing the room (`1`)
 
@@ -263,10 +271,13 @@ declared in GLSL exists in the material's uniform map, that varyings match
 across stages, and that every custom attribute is supplied by the geometry.
 Those are the failure modes that otherwise show up only as a black canvas.
 
-The 189 tests cover the chaos bands, mood blending, the priority stack, the
+The 211 tests cover the chaos bands, mood blending, the priority stack, the
 reaction packet lifecycle, the safety clamps, the prototype budgets, bridge
 handling and failure, the recorder, the performance guard, the panel modes and
-the microphone environment checks, and the handoff pack.
+the microphone environment checks, and the handoff pack. The interface itself
+is exercised as real DOM in `test/ui-dom.test.js` — the deck's checkboxes, the
+readout's close button, and the dialog's focus handling — because that is the
+part a shader contract test can never see.
 
 ### The handoff pack
 

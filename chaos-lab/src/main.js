@@ -20,21 +20,29 @@ import { SessionRecorder } from './core/recorder.js';
 import { MOOD_ORDER, MOODS, moodForChaos } from './core/moods.js';
 import { BridgeSocket, captureEnvironment, captureBlocker } from './audio/analysis.js';
 import {
-  PANEL_ACTION_LABELS,
-  PANEL_KEY,
-  applyPanelMode,
-  nextPanelMode,
+  applyViewState,
+  createViewState,
+  cycleMode,
+  hideAll,
+  isClear,
   panelModeMessage,
+  setRegion,
+  showAll,
 } from './ui/panels.js';
+import { MENU_KEY, SettingsMenu, closesMenu } from './ui/menu.js';
 
 const stage = document.getElementById('stage');
 const readoutRoot = document.getElementById('readout');
-const deckRoot = document.getElementById('deck');
 const banner = document.getElementById('banner');
 const intro = document.getElementById('intro');
 const introStart = document.getElementById('introStart');
 const uiToggle = document.getElementById('uiToggle');
 const uiToggleLabel = document.getElementById('uiToggleLabel');
+const menuRoot = document.getElementById('menu');
+const menuSheet = document.getElementById('menuSheet');
+const menuBody = document.getElementById('menuBody');
+const menuClose = document.getElementById('menuClose');
+const menuBackdrop = document.getElementById('menuBackdrop');
 
 const recorder = new SessionRecorder({ seconds: 120 });
 let engine;
@@ -42,7 +50,8 @@ let readout;
 let deck;
 let bridgeSocket;
 let bannerTimer;
-let panelMode = 'full';
+let menu;
+let view = createViewState('full');
 
 // ---------------------------------------------------------------------------
 // Banner
@@ -66,8 +75,9 @@ function boot() {
     onEvent: handleEngineEvent,
   });
 
-  readout = new Readout(readoutRoot);
-  deck = new ControlDeck(deckRoot, {
+  deck = new ControlDeck(menuBody, {
+    onViewRegion: (region, visible) => setViewRegion(region, visible),
+    onViewPreset: (id) => applyViewPreset(id),
     onAudioSource: (id) => selectAudioSource(id),
     onMoodMode: (id) => selectMoodMode(id),
     onSignal: (id) => injectSignal(id),
@@ -93,12 +103,25 @@ function boot() {
     onBridgeConnect: (url) => toggleBridge(url),
   });
 
+  readout = new Readout(readoutRoot, {
+    onClose: () => setViewRegion('readout', false),
+  });
+
+  // The sheet owns what opens and closes it; the stage keeps its own keys.
+  menu = new SettingsMenu({
+    root: menuRoot,
+    sheet: menuSheet,
+    body: menuBody,
+    launcher: uiToggle,
+    close: menuClose,
+    backdrop: menuBackdrop,
+  });
+
   bindPointer();
   bindKeys();
-  // The chip starts on the label for the first press, and shows the key that
-  // does the same thing.
-  uiToggleLabel.textContent = PANEL_ACTION_LABELS[panelMode];
-  uiToggle.querySelector('kbd').textContent = PANEL_KEY;
+  // The chip is the settings launcher; its key badge never changes.
+  uiToggle.querySelector('kbd').textContent = MENU_KEY;
+  syncView();
 
   engine.start();
   engine.setObserverMotion(0.45);
@@ -171,17 +194,44 @@ function handleEngineEvent({ type, detail }) {
 // Panels
 // ---------------------------------------------------------------------------
 /**
- * Cycle the chrome: everything, side panels hidden, then just FuX.
+ * Push the view state to the page and to the settings sheet.
  *
- * The button and the H key go through the same function so they can never
- * drift apart, and the label always names what the *next* press does.
+ * There is one state object; the `H` key, the chip, the readout's close button
+ * and the checkboxes in the sheet all mutate it through this function, so what
+ * the menu shows can never disagree with what is on screen.
  */
+function syncView() {
+  applyViewState(document.body, view);
+  deck.setViewState(view);
+  const clear = isClear(view);
+  uiToggleLabel.textContent = clear ? 'Show UI' : 'Menu';
+  uiToggle.setAttribute('aria-pressed', String(clear));
+}
+
+/** Cycle the presets: everything, side panels hidden, then just FuX. */
 function cyclePanels() {
-  panelMode = applyPanelMode(document.body, nextPanelMode(panelMode));
-  uiToggleLabel.textContent = PANEL_ACTION_LABELS[panelMode];
-  uiToggle.setAttribute('aria-pressed', String(panelMode !== 'full'));
-  const message = panelModeMessage(panelMode);
-  if (message && panelMode !== 'hidden') say(message, 3200);
+  const previous = view.mode;
+  view = cycleMode(view);
+  syncView();
+  const message = panelModeMessage(view.mode);
+  if (message && previous !== 'hidden') say(message, 3200);
+}
+
+/** Show or hide one region, which is what the sheet's checkboxes do. */
+function setViewRegion(region, visible) {
+  view = setRegion(view, region, visible);
+  syncView();
+}
+
+function applyViewPreset(id) {
+  if (id === 'clear') {
+    view = hideAll(view);
+    say('Chrome hidden — just FuX. <b>M</b> for the menu, <b>H</b> to step back.', 3600);
+  } else {
+    view = showAll(view);
+    say('Everything back on screen.');
+  }
+  syncView();
 }
 
 // ---------------------------------------------------------------------------
@@ -446,6 +496,11 @@ function pointerToLocal(event) {
 // ---------------------------------------------------------------------------
 function bindKeys() {
   window.addEventListener('keydown', (event) => {
+    // The settings sheet owns Escape, and text fields keep their own keys.
+    if (closesMenu(event) && menu.open) {
+      menu.close();
+      return;
+    }
     if (event.target instanceof HTMLInputElement) return;
     const key = event.key.toLowerCase();
 
@@ -507,6 +562,9 @@ function bindKeys() {
       }
       case 'h':
         cyclePanels();
+        break;
+      case 'm':
+        menu.toggle();
         break;
       case ' ':
         event.preventDefault();

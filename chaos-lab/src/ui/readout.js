@@ -17,13 +17,30 @@ const el = (tag, className, text) => {
 };
 
 export class Readout {
-  constructor(root) {
+  /**
+   * @param {HTMLElement} root
+   * @param {{onClose?: () => void}} [handlers]
+   */
+  constructor(root, handlers = {}) {
     this.root = root;
+    this.h = handlers;
     this.build();
   }
 
   build() {
     this.root.innerHTML = '';
+
+    // --- Head ---------------------------------------------------------------
+    // The panel is dismissable like every other piece of chrome; the settings
+    // sheet is where it comes back from.
+    const panelHead = el('div', 'panel-head');
+    panelHead.appendChild(el('span', 'panel-title', 'Live readout'));
+    const close = el('button', 'panel-close', '\u00d7');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Close the readout');
+    close.addEventListener('click', () => this.h.onClose?.());
+    panelHead.appendChild(close);
+    this.root.appendChild(panelHead);
 
     // --- Chaos ------------------------------------------------------------
     const chaosBlock = el('div', 'block');

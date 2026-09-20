@@ -11,6 +11,13 @@
  */
 
 import { MOODS, MOOD_ORDER } from '../core/moods.js';
+import {
+  PANEL_KEY,
+  REGION_LABELS,
+  VIEW_REGIONS,
+  isClear,
+  visibilityMap,
+} from './panels.js';
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -41,6 +48,7 @@ export class ControlDeck {
 
   build() {
     this.root.innerHTML = '';
+    this.root.appendChild(this.groupView());
     this.root.appendChild(this.groupAudio());
     this.root.appendChild(this.groupMood());
     this.root.appendChild(this.groupSignals());
@@ -51,6 +59,53 @@ export class ControlDeck {
 
   titled(text) {
     return el('div', 'group-title', text);
+  }
+
+  /**
+   * View — the same state the `H` key drives, as checkboxes.
+   *
+   * A box here and a press of `H` go through one state object in `main.js`, so
+   * the tick marks cannot end up describing a different page from the one on
+   * screen.
+   */
+  groupView() {
+    const g = el('div', 'group');
+    g.appendChild(this.titled('On screen'));
+
+    this.viewBoxes = {};
+    for (const region of VIEW_REGIONS) {
+      const row = el('label', 'check');
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = true;
+      box.addEventListener('change', () => {
+        this.h.onViewRegion?.(region, box.checked);
+      });
+      row.appendChild(box);
+      row.appendChild(el('span', null, REGION_LABELS[region]));
+      g.appendChild(row);
+      this.viewBoxes[region] = box;
+    }
+
+    const { wrap, nodes } = this.buttons(
+      [
+        { id: 'clear', label: 'Just FuX', key: PANEL_KEY },
+        { id: 'restore', label: 'Show all' },
+      ],
+      (id) => this.h.onViewPreset?.(id),
+    );
+    g.appendChild(wrap);
+    this.viewNodes = nodes;
+    return g;
+  }
+
+  /** Reflect the view state the engine of the UI is actually in. */
+  setViewState(state) {
+    const visible = visibilityMap(state);
+    for (const region of VIEW_REGIONS) {
+      if (this.viewBoxes?.[region]) this.viewBoxes[region].checked = visible[region];
+    }
+    this.setPressed(this.viewNodes, isClear(state) ? 'clear' : null);
   }
 
   /**
