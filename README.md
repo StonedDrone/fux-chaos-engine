@@ -71,6 +71,25 @@ is the timing reference for reproducing them.
 See `chaos-lab/README.md` for the full mapping back to the build kit.
 
 
+## The handoff pack
+
+The prototype proves the kit; `handoff/` and `Content/` are what goes back into
+the editor.
+
+- `handoff/ENTITY-BUILD-KIT.md` — the build kit PDF as searchable, diffable
+  markdown, generated from `docs/` by `npm run docs:build-kit`.
+- `handoff/moods/` — the four mood Data Assets as CSV, import-ready for a
+  DataTable, generated from the prototype's mood table by `npm run docs:moods`.
+- `Content/MirrorBox/FuX/` — the starter folder layout from page 9, with the
+  kit's asset names in place and a note on what belongs in each slot.
+- `Content/MirrorBox/FuX/Materials/FuXChaos.ush` — the material graph as HLSL
+  for Material Expression Custom nodes, ported from the prototype's shaders.
+
+Both generators have a `--check` mode wired into `npm run verify`, so a stale
+document or a mood table that has drifted from the values the prototype was
+tuned with fails the build instead of shipping.
+
+
 ## Contents
 
 
@@ -79,6 +98,8 @@ See `chaos-lab/README.md` for the full mapping back to the build kit.
   Intel UHD 620-class hardware)
 - `chaos-lab/` — the build kit as a running prototype (interactive entity,
   Chaos resolver, mood system, MilkDrop-Shake bridge, session recorder)
+- `handoff/` — the build kit as markdown and the mood tables as CSV
+- `Content/` — the UE5 folder scaffold and the HLSL for the master material
 - `concept-art/` — visual direction renders
 - `protocol/` — spawn verification for the ICU ↔ Chaos Engine loop
 

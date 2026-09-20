@@ -1,0 +1,331 @@
+// FuXChaos.ush
+//
+// Custom node bodies for M_FuX_Chaos_Master, ported from the browser
+// prototype (chaos-lab/src/render/shaders/) and checked back against the
+// material graph on page 4 of docs/symbiote-entity-ue5-build-kit.pdf:
+//
+//   Flow       = CurlNoise + WaterCurrent
+//   Pressure   = AudioLow + Threat + Touch
+//   Spikes     = pow(saturate(Noise * Pressure), 5)
+//   Breath     = sin(Time * BreathRate) * BreathAmount
+//   WPO        = VertexNormal * (Flow + Spikes) * (BasePulse + ReactionStrength)
+//   Emissive   = lerp(Purple, ToxicLime, Attention + AudioMid) * Glow
+//
+// Each function below is written to be pasted whole into one Material
+// Expression Custom node. They are therefore self-contained: the noise and
+// curl helpers are included here rather than assumed, because a Custom node
+// sees only its own body and the engine's intrinsic functions.
+//
+// Wiring, pin names, and the parameter collection are in README.md beside
+// this file.
+//
+// Loops are avoided on purpose: the curl potential needs two octaves and the
+// spike field wants three, so each octave is written out. A loop would be
+// shorter to read and slower to compile, and on the Intel UHD 620 the kit
+// names as the target (p.10) that trade is not worth making.
+
+#pragma once
+
+// ---------------------------------------------------------------------------
+// Start values, build kit p.4 "Runtime parameters"
+//
+// These are the same numbers as MATERIAL_DEFAULTS in the prototype; a test in
+// chaos-lab/test/handoff.test.js fails if the two ever disagree.
+// ---------------------------------------------------------------------------
+#define FUX_GLOW_DEFAULT          8.0
+#define FUX_BREATH_RATE_DEFAULT   0.35
+#define FUX_DISPLACE_CM_DEFAULT   2.0
+#define FUX_FLOW_SPEED_DEFAULT    0.12
+#define FUX_OPACITY_DEFAULT       0.68
+#define FUX_EDGE_SHARPNESS_DEFAULT 3.5
+
+// Ferrofluid is incompressible: pulled inward it has to swell somewhere else.
+#define FUX_INCOMPRESSIBILITY 0.06
+
+// Glow 8.0 is authored for a bloom pass that expects HDR input; the prototype
+// feeds it through this factor so a lamp-bright core does not clip to white.
+#define FUX_BLOOM_HEADROOM 0.14
+
+// Displace is authored in centimetres (build kit p.4) and Unreal works in
+// metres, so every offset is scaled once, here.
+#define FUX_CM_TO_M 0.01
+
+// Total travel clamp. Nothing may tear the silhouette apart, however excited
+// the input is.
+#define FUX_MAX_TRAVEL 1.35
+
+// ---------------------------------------------------------------------------
+// Noise
+//
+// The prototype runs simplex noise. Unreal ships Material Expression Noise and
+// Vector Noise nodes that are cheaper than a hand-rolled simplex, so if you
+// would rather use those, feed their output into the Noise pin of the Spike
+// and Curl nodes instead of calling the helpers below. This value-noise
+// implementation exists so the Custom nodes stay self-contained, and it is
+// shaped to land in the same 0..1 range the prototype's simplex fbm does.
+// ---------------------------------------------------------------------------
+
+/** Cheap 3D hash. Value noise is built from eight of these. */
+float FuXHash13(float3 p)
+{
+    p = frac(p * 0.1031);
+    p += dot(p, p.zyx + 31.32);
+    return frac((p.x + p.y) * p.z);
+}
+
+/** Trilinear value noise, smoothstep-interpolated, in 0..1. */
+float FuXValueNoise(float3 p)
+{
+    float3 cell = floor(p);
+    float3 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float n000 = FuXHash13(cell + float3(0.0, 0.0, 0.0));
+    float n100 = FuXHash13(cell + float3(1.0, 0.0, 0.0));
+    float n010 = FuXHash13(cell + float3(0.0, 1.0, 0.0));
+    float n110 = FuXHash13(cell + float3(1.0, 1.0, 0.0));
+    float n001 = FuXHash13(cell + float3(0.0, 0.0, 1.0));
+    float n101 = FuXHash13(cell + float3(1.0, 0.0, 1.0));
+    float n011 = FuXHash13(cell + float3(0.0, 1.0, 1.0));
+    float n111 = FuXHash13(cell + float3(1.0, 1.0, 1.0));
+
+    float x00 = lerp(n000, n100, f.x);
+    float x10 = lerp(n010, n110, f.x);
+    float x01 = lerp(n001, n101, f.x);
+    float x11 = lerp(n011, n111, f.x);
+
+    return lerp(lerp(x00, x10, f.y), lerp(x01, x11, f.y), f.z);
+}
+
+/** Two octaves, lacunarity 2.03, gain 0.5 — the curl potential's budget. */
+float FuXFbm2(float3 p)
+{
+    float sum = FuXValueNoise(p) * 0.5;
+    p *= 2.03;
+    sum += FuXValueNoise(p) * 0.25;
+    return sum;
+}
+
+/** Three octaves — the smoke lift, the viscous fold, and the spike field. */
+float FuXFbm3(float3 p)
+{
+    float sum = FuXValueNoise(p) * 0.5;
+    p *= 2.03;
+    sum += FuXValueNoise(p) * 0.25;
+    p *= 2.03;
+    sum += FuXValueNoise(p) * 0.125;
+    return sum;
+}
+
+/** Ridged noise, for spikes and thin filaments. */
+float FuXRidged2(float3 p)
+{
+    float sum = abs(FuXValueNoise(p) * 2.0 - 1.0) * 0.5;
+    p *= 2.03;
+    sum += abs(FuXValueNoise(p) * 2.0 - 1.0) * 0.25;
+    return sum;
+}
+
+/**
+ * Curl of the noise potential, by finite differences.
+ *
+ * The curl of any field is divergence free, which is the whole point: the
+ * body can churn as hard as it likes and never appear to gain or lose mass.
+ */
+float3 FuXCurlNoise(float3 p)
+{
+    const float e = 0.35;
+
+    float x0 = FuXFbm2(p - float3(e, 0.0, 0.0));
+    float x1 = FuXFbm2(p + float3(e, 0.0, 0.0));
+    float y0 = FuXFbm2(p - float3(0.0, e, 0.0));
+    float y1 = FuXFbm2(p + float3(0.0, e, 0.0));
+    float z0 = FuXFbm2(p - float3(0.0, 0.0, e));
+    float z1 = FuXFbm2(p + float3(0.0, 0.0, e));
+
+    float3 g = float3(x1 - x0, y1 - y0, z1 - z0) / (2.0 * e);
+    return float3(g.y - g.z, g.z - g.x, g.x - g.y);
+}
+
+// ---------------------------------------------------------------------------
+// The graph
+// ---------------------------------------------------------------------------
+
+/**
+ * Flow = CurlNoise + WaterCurrent            (build kit p.4)
+ *
+ * Two crossings of surface wave roll underneath the current so the surface
+ * never reads as one texture sliding past. Returns the displacement in model
+ * units, before the WPO node scales it by Displace and the base pulse.
+ *
+ * Custom node pins: LocalPosition (float3), Time (float), FlowSpeed (float).
+ */
+float3 FuXFlowField(
+    float3 LocalPosition,
+    float Time,
+    float FlowSpeed = FUX_FLOW_SPEED_DEFAULT)
+{
+    float3 noisePosition = LocalPosition * 1.9;
+    float3 curl = FuXCurlNoise(noisePosition * 1.15 + float3(0.0, Time * FlowSpeed * 0.9, 0.0));
+    float curlMagnitude = length(curl);
+
+    float waveA = sin(LocalPosition.x * 3.1 + Time * FlowSpeed * 2.4 + FuXValueNoise(noisePosition) * 1.4);
+    float waveB = sin(LocalPosition.z * 2.4 - Time * FlowSpeed * 1.8 + LocalPosition.y * 1.6);
+    float waterCurrent = (waveA * 0.5 + waveB * 0.5) * 0.5;
+
+    return curl * (0.32 + curlMagnitude * 0.22) * (0.35 + FlowSpeed * 2.2)
+         + normalize(LocalPosition + 0.0001) * waterCurrent * 0.16;
+}
+
+/**
+ * Pressure = AudioLow + Threat + Touch        (build kit p.4)
+ *
+ * Three inputs, one number, clamped: the audio envelope, a proximity or
+ * system threat, and the live touch impulse.
+ *
+ * Custom node pins: AudioLow, Threat, Touch.
+ */
+float FuXPressure(float AudioLow, float Threat, float Touch)
+{
+    return saturate(AudioLow + Threat + Touch);
+}
+
+/**
+ * The spike field that Pressure drives.
+ *
+ * Custom node pins: LocalPosition, Time, Pressure, SpikeBias.
+ *
+ * Spikes = pow(saturate(Noise * Pressure), 5) is the kit's shape; the
+ * ridged noise and the fine second layer are what keep the peaks from
+ * reading as soft bumps at this density.
+ */
+float FuXSpikeField(float3 LocalPosition, float Time, float Pressure, float SpikeBias)
+{
+    float3 noisePosition = LocalPosition * 1.9;
+    float ridged = FuXRidged2(noisePosition * 0.72 + Time * 0.02);
+    float noise = saturate(ridged);
+
+    float spikes = pow(saturate(noise * Pressure), 5.0);
+    spikes *= SpikeBias;
+    spikes *= 0.7 + 0.6 * FuXRidged2(noisePosition * 2.3);
+    return spikes;
+}
+
+/** EdgeSharpness keeps the spikes cut rather than soft, at any density. */
+float FuXSpikeSharpness(float Spikes, float EdgeSharpness = FUX_EDGE_SHARPNESS_DEFAULT)
+{
+    return pow(Spikes, clamp(EdgeSharpness * 0.34, 1.0, 4.0));
+}
+
+/**
+ * Breath = sin(Time * BreathRate) * BreathAmount     (build kit p.4)
+ *
+ * The body breathes in silence; this is the one term that never stops.
+ *
+ * Custom node pins: Time, BreathRate, BreathAmount.
+ */
+float FuXBreath(
+    float Time,
+    float BreathRate = FUX_BREATH_RATE_DEFAULT,
+    float BreathAmount)
+{
+    return sin(Time * BreathRate) * BreathAmount;
+}
+
+/**
+ * WPO = VertexNormal * (Flow + Spikes) * (BasePulse + ReactionStrength)
+ *
+ * Flow and Spikes arrive as magnitudes from the nodes above; the normal
+ * turns them into a direction. Displace is authored in centimetres so the
+ * mood values keep the numbers the kit prints.
+ *
+ * Custom node pins: VertexNormal (float3, from VertexNormalWS), Flow, Spikes,
+ * Breath, BreathAmount, ReactionStrength, DisplaceCm.
+ *
+ * BasePulse is the slow breath term and ReactionStrength the live signal:
+ * the kit multiplies by their sum, so displacement never drops to zero while
+ * the reaction layer is quiet.
+ */
+float3 FuXWorldPositionOffset(
+    float3 VertexNormal,
+    float Flow,
+    float Spikes,
+    float Breath,
+    float BreathAmount,
+    float ReactionStrength,
+    float DisplaceCm = FUX_DISPLACE_CM_DEFAULT)
+{
+    float basePulse = Breath * BreathAmount * 0.35;
+    float amount = (Flow + Spikes) * (basePulse + ReactionStrength);
+    float metres = amount * DisplaceCm * FUX_CM_TO_M;
+    return VertexNormal * metres;
+}
+
+/**
+ * Emissive = lerp(Purple, ToxicLime, Attention + AudioMid) * Glow
+ *
+ * Purple is identity, teal is attention, acid lime is the answer (kit p.4).
+ * Attention and AudioMid are summed and saturated, so a loud room and a
+ * watched target push the core toward the answer colour together.
+ *
+ * Custom node pins: Purple (float3), ToxicLime (float3), Attention, AudioMid,
+ * Glow. BloomHeadroom is usually left at its default.
+ */
+float3 FuXEmissive(
+    float3 Purple,
+    float3 ToxicLime,
+    float Attention,
+    float AudioMid,
+    float Glow = FUX_GLOW_DEFAULT,
+    float BloomHeadroom = FUX_BLOOM_HEADROOM)
+{
+    float answer = saturate(Attention + AudioMid);
+    return lerp(Purple, ToxicLime, answer) * Glow * BloomHeadroom;
+}
+
+/**
+ * Safety override, priority one on the kit's state stack (p.7).
+ *
+ * Clamps flash and displacement. Feed Safety 1.0 normally and drop it toward
+ * 0 when the low-stimulation mode is on; a public showing needs this wired
+ * before it needs anything else.
+ */
+float3 FuXApplySafety(float3 In, float Safety)
+{
+    return In * saturate(Safety);
+}
+
+/** The same clamp for the total travel of one vertex, in model units. */
+float3 FuXClampTravel(float3 Offset, float MaxTravel = FUX_MAX_TRAVEL)
+{
+    float travel = length(Offset);
+    if (travel > MaxTravel)
+    {
+        Offset *= MaxTravel / max(travel, 0.0001);
+    }
+    return Offset;
+}
+
+/**
+ * Incompressibility: pulled inward, the body swells elsewhere.
+ *
+ * Ferrofluid does not compress; scaling against the normal keeps the apparent
+ * mass constant as chaos rises.
+ */
+float3 FuXIncompressible(float3 LocalPosition, float Chaos, float Safety)
+{
+    return LocalPosition * (1.0 - Chaos * FUX_INCOMPRESSIBILITY * Safety);
+}
+
+/**
+ * Opacity for the translucent skin layer.
+ *
+ * Custom node pins: Opacity, SpikeMask, Ripple.
+ *
+ * The glass never hides the entity (kit p.11), so the mask makes the skin
+ * thinner at the spikes and at a touch ripple rather than denser.
+ */
+float FuXSkinOpacity(float SpikeMask, float Ripple, float Opacity = FUX_OPACITY_DEFAULT)
+{
+    return saturate(Opacity * (1.0 - SpikeMask * 0.35) + Ripple * 0.25);
+}

@@ -220,7 +220,9 @@ Press `Q` to pin a tier manually; auto-scaling switches off when you do.
 ## Verifying
 
 ```bash
-npm run verify     # GLSL parse check, then the test suite
+npm run verify     # GLSL parse check, the doc freshness checks, then the tests
+npm run docs:build-kit   # regenerate handoff/ENTITY-BUILD-KIT.md from the PDF
+npm run docs:moods       # regenerate handoff/moods/*.csv from src/core/moods.js
 ```
 
 There is no GL context in CI, so the shaders are validated by parsing them
@@ -229,9 +231,31 @@ declared in GLSL exists in the material's uniform map, that varyings match
 across stages, and that every custom attribute is supplied by the geometry.
 Those are the failure modes that otherwise show up only as a black canvas.
 
-The 140 tests cover the chaos bands, mood blending, the priority stack, the
+The 170 tests cover the chaos bands, mood blending, the priority stack, the
 reaction packet lifecycle, the safety clamps, the prototype budgets, bridge
-handling and failure, the recorder, and the performance guard.
+handling and failure, the recorder, the performance guard, and the handoff
+pack.
+
+### The handoff pack
+
+Two generators keep the artefacts that leave this repository in step with the
+code that established them, and both are checked rather than trusted:
+
+`tools/build-kit-to-markdown.mjs` converts `docs/symbiote-entity-ue5-build-kit.pdf`
+into `handoff/ENTITY-BUILD-KIT.md`. It recovers structure from the PDF's own
+geometry — font, height, and x position — because the document is laid out on a
+grid: monospace is code, a stable column grid is a table, a horizontal gutter
+splits a page into two streams, and the "OK" badges are the checklist items.
+`test/docs.test.js` then asserts the passages the prototype is built from
+survived the trip, including the words the PDF builds from ligature glyph runs.
+
+`tools/moods-to-csv.mjs` writes the four moods out for UE5 DataTable import,
+converting the prototype's sRGB hex to the linear values an `FLinearColor`
+column reads. `test/handoff.test.js` checks the CSVs against the mood table
+they were generated from, and checks the HLSL in `Content/MirrorBox/FuX/` for
+the mistakes that only a shader compiler would otherwise catch: GLSL keywords
+left in place, a call to a helper that is not in the same Custom node, a
+centimetre conversion applied twice.
 
 ---
 
@@ -247,5 +271,8 @@ handling and failure, the recorder, and the performance guard.
 | `DA_EntityMood` (p.7) | `src/core/moods.js` |
 | Update order (p.8) | `FuXEngine.step` |
 | Performance budgets (p.10) | `src/render/quality.js`, asserted in tests |
+| Starter folder layout (p.9) | `Content/MirrorBox/FuX/` |
+| Material graph as HLSL (p.4) | `Content/MirrorBox/FuX/Materials/FuXChaos.ush` |
+| The kit as markdown | `handoff/ENTITY-BUILD-KIT.md`, generated |
 
 Built by Stoned Drone LLC. Part of the Stonerverse.

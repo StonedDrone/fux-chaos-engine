@@ -11,14 +11,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint:glsl": "node tools/glsl-lint.mjs",
-    "verify": "npm run lint:glsl && npm run test",
-    "bridge": "node tools/bridge-demo.mjs"
+    "docs:build-kit": "node tools/build-kit-to-markdown.mjs",
+    "verify": "npm run lint:glsl && npm run docs:build-kit -- --check && npm run docs:moods -- --check && npm run test",
+    "bridge": "node tools/bridge-demo.mjs",
+    "docs:moods": "node tools/moods-to-csv.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"
   },
   "devDependencies": {
     "@shaderfrog/glsl-parser": "^7.0.1",
+    "pdfjs-dist": "^6.3.289",
     "vite": "^7.3.6",
     "vitest": "^3.2.7"
   },
