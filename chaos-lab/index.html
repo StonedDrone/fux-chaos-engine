@@ -26,6 +26,13 @@
 
     <footer class="banner" id="banner"></footer>
 
+    <!-- Stays visible in every mode: a view mode you can only leave by
+         remembering a keystroke is a trap. -->
+    <button class="ui-chip" id="uiToggle" type="button" aria-controls="masthead readout deck banner">
+      <span class="ui-chip-label" id="uiToggleLabel">Hide panels</span>
+      <kbd>H</kbd>
+    </button>
+
     <div class="intro" id="intro">
       <div class="intro-card">
         <p class="intro-kicker">Magic Mirror Box / build kit p.3</p>
@@ -40,6 +47,7 @@
           <li><b>Move the pointer</b> — FuX leans toward what he is watching</li>
           <li><b>Keys:</b> <kbd>1</kbd> audio in · <kbd>3</kbd> demo signal · <kbd>S</kbd> silence</li>
           <li><kbd>C</kbd> <kbd>J</kbd> <kbd>O</kbd> <kbd>W</kbd> cue a mood · <kbd>X</kbd> system spike · <kbd>V</kbd> story cue</li>
+          <li><kbd>H</kbd> hide the panels and watch FuX · <kbd>Q</kbd> quality tier</li>
         </ul>
         <button class="intro-start" id="introStart">Wake the entity</button>
       </div>

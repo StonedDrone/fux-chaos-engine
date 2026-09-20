@@ -124,8 +124,15 @@ export class LiveAnalyser {
       this.ready = false;
       return false;
     }
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      this.error = 'Audio capture needs microphone access, which this context does not provide.';
+    const environment = captureEnvironment();
+    const blocker = captureBlocker(environment);
+    // Worth trying whenever the frame merely *might* block it: a preview that
+    // granted the permission works fine, and refusing on its behalf would
+    // break the case that does work. Only what the browser has already told us
+    // is impossible stops here.
+    if (!environment.supported || !environment.secure) {
+      this.error = blocker;
+      this.needsOwnTab = true;
       this.ready = false;
       return false;
     }
@@ -150,7 +157,9 @@ export class LiveAnalyser {
       this.error = null;
       return true;
     } catch (err) {
-      this.error = describeMediaError(err);
+      this.error = describeMediaError(err, environment);
+      // A microphone denied inside a frame cannot be fixed from inside it.
+      this.needsOwnTab = environment.embedded && err?.name === 'NotAllowedError';
       this.ready = false;
       return false;
     }
@@ -217,10 +226,57 @@ export class LiveAnalyser {
   }
 }
 
+/**
+ * What this page is allowed to do about audio capture, and why.
+ *
+ * A denied microphone has several quite different causes and only one of them
+ * is fixed by clicking "allow": in an embedded preview the browser often never
+ * shows a prompt at all, because the surrounding page has not granted the
+ * frame microphone permission. Telling somebody to "allow microphone access"
+ * when no prompt was ever offered sends them looking for a setting that is not
+ * there, so the environment is inspected first and the message says what can
+ * actually be done about it.
+ *
+ * Guarded for node, where there is no window to ask.
+ */
+export function captureEnvironment() {
+  const hasWindow = typeof window !== 'undefined';
+  const embedded = hasWindow && window.self !== window.top;
+  const secure = !hasWindow || window.isSecureContext !== false;
+  const supported = typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
+
+  return { embedded, secure, supported };
+}
+
+/** True when only a top-level tab can give the capture a chance. */
+export function needsOwnTab(environment = captureEnvironment()) {
+  return environment.embedded || !environment.secure;
+}
+
+/** The one-line explanation of what is standing in the way, or null. */
+export function captureBlocker(environment = captureEnvironment()) {
+  if (!environment.supported) {
+    return 'This browser does not expose audio capture (no navigator.mediaDevices).';
+  }
+  if (!environment.secure) {
+    return 'Audio capture needs HTTPS or localhost — this page is neither.';
+  }
+  if (environment.embedded) {
+    return 'This page is running inside a preview frame, which usually blocks the microphone prompt.';
+  }
+  return null;
+}
+
 /** Friendly, actionable messages instead of raw DOMException text. */
-function describeMediaError(err) {
+export function describeMediaError(err, environment = captureEnvironment()) {
   const name = err?.name ?? '';
-  if (name === 'NotAllowedError') return 'Permission denied — allow microphone access, then try again.';
+  if (name === 'NotAllowedError') {
+    if (environment.embedded) {
+      return 'Microphone blocked. Preview frames usually block it outright — open the lab in '
+        + 'its own browser tab and allow the microphone there.';
+    }
+    return 'Permission denied — allow microphone access, then try again.';
+  }
   if (name === 'NotFoundError') return 'No audio input device found.';
   if (name === 'NotReadableError') return 'Audio device is in use by another application.';
   if (name === 'SecurityError') return 'Blocked by browser security — serve over HTTPS or localhost.';

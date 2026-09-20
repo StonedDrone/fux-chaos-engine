@@ -68,6 +68,11 @@ That recording is the piece that connects the two halves of this repo: the
 mood clips audited in WaveScope are the visual targets, and a Chaos Lab take
 is the timing reference for reproducing them.
 
+Press `H` (or the chip in the corner) to clear the chrome and watch the entity
+on its own; `3` plays the demo signal if you would rather not grant a
+microphone, and the lab will tell you when a preview frame is what is blocking
+one.
+
 See `chaos-lab/README.md` for the full mapping back to the build kit.
 
 

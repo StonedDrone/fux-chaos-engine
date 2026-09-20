@@ -601,7 +601,7 @@ input[type="text"]:focus {
   transition: opacity 220ms ease;
   pointer-events: none;
   white-space: nowrap;
-  max-width: min(92vw, 720px);
+  max-width: min(78vw, 720px);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -728,9 +728,69 @@ kbd {
 /* ------------------------------------------------------------------ */
 /* Compact layout                                                      */
 /* ------------------------------------------------------------------ */
-body[data-compact="true"] .readout,
-body[data-compact="true"] .deck {
+/* ------------------------------------------------------------------ */
+/* Panel modes — hide the chrome and just watch FuX                    */
+/* ------------------------------------------------------------------ */
+.ui-chip {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: var(--ink-2);
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  padding: 7px 12px;
+  cursor: pointer;
+  opacity: 0.42;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: opacity 200ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.ui-chip:hover,
+.ui-chip:focus-visible {
+  opacity: 1;
+  color: var(--text);
+  border-color: var(--violet);
+  outline: none;
+}
+
+/* In the hidden modes the chip is the only way back, so it stops being shy. */
+body[data-panels="compact"] .ui-chip,
+body[data-panels="hidden"] .ui-chip {
+  opacity: 0.75;
+}
+
+/* The two side panels, and then everything. */
+body[data-panels="compact"] .readout,
+body[data-panels="compact"] .deck,
+body[data-panels="hidden"] .readout,
+body[data-panels="hidden"] .deck,
+body[data-panels="hidden"] .masthead,
+body[data-panels="hidden"] .banner,
+body[data-panels="hidden"] .intro {
   display: none;
+}
+
+/* A link inside a note is the one actionable thing in the deck, so it reads
+   as a button rather than as text to be copied out by hand. */
+.note a {
+  color: var(--violet);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.note a:hover {
+  color: var(--lime);
 }
 
 @media (max-width: 900px) {

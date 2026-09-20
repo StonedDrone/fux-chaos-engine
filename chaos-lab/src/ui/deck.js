@@ -101,6 +101,11 @@ export class ControlDeck {
     g.appendChild(wrap);
     this.audioNote = el('div', 'note', 'Demo signal: calibrated loop, drops every 36s.');
     g.appendChild(this.audioNote);
+    // Room for the one thing a blocked microphone needs: a link to the tab
+    // that can actually ask for permission.
+    this.micHelp = el('div', 'note');
+    this.micHelp.hidden = true;
+    g.appendChild(this.micHelp);
 
     // MilkDrop-Shake bridge — the adapter boundary from p.5, made real.
     g.appendChild(this.titled('MilkDrop-Shake bridge'));
@@ -261,6 +266,36 @@ export class ControlDeck {
   setAudioNote(text, isError = false) {
     this.audioNote.textContent = text;
     this.audioNote.className = isError ? 'note err' : 'note';
+  }
+
+  /**
+   * Show the way out of a blocked microphone.
+   *
+   * `href` opens in a new tab on purpose: a preview frame that blocks the
+   * microphone prompt cannot be talked into showing it, but the same URL
+   * loaded top-level can.
+   *
+   * @param {string} text
+   * @param {{label: string, href: string}} [link]
+   */
+  setMicHelp(text, link) {
+    this.micHelp.innerHTML = '';
+    this.micHelp.className = 'note';
+    this.micHelp.appendChild(document.createTextNode(text));
+    if (link) {
+      this.micHelp.appendChild(document.createTextNode(' '));
+      const a = el('a', null, link.label);
+      a.href = link.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      this.micHelp.appendChild(a);
+    }
+    this.micHelp.hidden = false;
+  }
+
+  clearMicHelp() {
+    this.micHelp.hidden = true;
+    this.micHelp.innerHTML = '';
   }
 
   setBridgeNote(text, isError = false) {

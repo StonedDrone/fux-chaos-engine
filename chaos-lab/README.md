@@ -51,11 +51,43 @@ value is in the numbers, the timing, and the behaviour, which port directly.
 | `T` `P` `X` `V` | Inject Touch · Proximity · System spike · Voice |
 | `R` | Record a take · `E` to export |
 | `Q` | Cycle quality tier |
-| `H` | Hide the panels · `Space` pause |
+| `H` | Hide the chrome: panels → everything → back · `Space` pause |
 
 The keyboard shortcuts deliberately echo the WaveScope workflow in the README,
 so the lab and the audition tool feel like one pipeline: `3` for the silent
 demo signal, `1` to tap audio, `R` to record a reference take.
+
+### Getting the chrome out of the way
+
+The button in the bottom-right corner and the `H` key do the same thing, and
+both name what the next press will do:
+
+| Mode | On screen |
+|---|---|
+| full | everything |
+| compact | the masthead, the message bar, and the chip — the two side panels are gone |
+| hidden | FuX, and the chip |
+
+The chip stays visible in every mode on purpose. A view mode you can only leave
+by remembering a keystroke is a trap, not a feature.
+
+### Hearing the room (`1`)
+
+The microphone has to be granted by the page that owns the tab, so a lab
+running inside a preview frame usually never gets a permission prompt — the
+browser declines on your behalf before the app is consulted. The lab checks
+which situation it is in and says so rather than repeating "allow microphone
+access" at somebody who was never asked:
+
+- **In its own tab**, `1` prompts normally, and FuX listens.
+- **In a preview frame**, the deck explains that the frame is the blocker and
+  offers a link that opens the same URL in a new tab, where the prompt works.
+- **Either way**, if the input stays unavailable the demo signal keeps the body
+  moving, and the message says that is what is happening — a still entity and a
+  silent failure would be worse than an honest fallback.
+
+`Shift+S` (low-stimulation) and the demo signal both work regardless of any of
+this; nothing in the lab depends on the microphone.
 
 ---
 
@@ -231,10 +263,10 @@ declared in GLSL exists in the material's uniform map, that varyings match
 across stages, and that every custom attribute is supplied by the geometry.
 Those are the failure modes that otherwise show up only as a black canvas.
 
-The 174 tests cover the chaos bands, mood blending, the priority stack, the
+The 189 tests cover the chaos bands, mood blending, the priority stack, the
 reaction packet lifecycle, the safety clamps, the prototype budgets, bridge
-handling and failure, the recorder, the performance guard, and the handoff
-pack.
+handling and failure, the recorder, the performance guard, the panel modes and
+the microphone environment checks, and the handoff pack.
 
 ### The handoff pack
 

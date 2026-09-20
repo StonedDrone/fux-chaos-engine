@@ -18,7 +18,14 @@ import { Readout } from './ui/readout.js';
 import { ControlDeck } from './ui/deck.js';
 import { SessionRecorder } from './core/recorder.js';
 import { MOOD_ORDER, MOODS, moodForChaos } from './core/moods.js';
-import { BridgeSocket } from './audio/analysis.js';
+import { BridgeSocket, captureEnvironment, captureBlocker } from './audio/analysis.js';
+import {
+  PANEL_ACTION_LABELS,
+  PANEL_KEY,
+  applyPanelMode,
+  nextPanelMode,
+  panelModeMessage,
+} from './ui/panels.js';
 
 const stage = document.getElementById('stage');
 const readoutRoot = document.getElementById('readout');
@@ -26,6 +33,8 @@ const deckRoot = document.getElementById('deck');
 const banner = document.getElementById('banner');
 const intro = document.getElementById('intro');
 const introStart = document.getElementById('introStart');
+const uiToggle = document.getElementById('uiToggle');
+const uiToggleLabel = document.getElementById('uiToggleLabel');
 
 const recorder = new SessionRecorder({ seconds: 120 });
 let engine;
@@ -33,6 +42,7 @@ let readout;
 let deck;
 let bridgeSocket;
 let bannerTimer;
+let panelMode = 'full';
 
 // ---------------------------------------------------------------------------
 // Banner
@@ -85,6 +95,10 @@ function boot() {
 
   bindPointer();
   bindKeys();
+  // The chip starts on the label for the first press, and shows the key that
+  // does the same thing.
+  uiToggleLabel.textContent = PANEL_ACTION_LABELS[panelMode];
+  uiToggle.querySelector('kbd').textContent = PANEL_KEY;
 
   engine.start();
   engine.setObserverMotion(0.45);
@@ -129,7 +143,17 @@ function handleEngineEvent({ type, detail }) {
       say(`Auto quality → <b>${detail.tier}</b> — ${detail.reason}`);
       break;
     case 'microphone':
-      if (!detail.ok) deck.setAudioNote(detail.error, true);
+      if (detail.ok) {
+        deck.clearMicHelp();
+        break;
+      }
+      deck.setAudioNote(detail.error, true);
+      if (engine.audio.live.needsOwnTab) {
+        deck.setMicHelp('Microphone access cannot be granted from inside this frame.', {
+          label: 'Open in a new tab',
+          href: window.location.href,
+        });
+      }
       break;
     case 'frame': {
       // Entity stats first, renderer-reported stats second: the renderer's
@@ -144,17 +168,58 @@ function handleEngineEvent({ type, detail }) {
 }
 
 // ---------------------------------------------------------------------------
+// Panels
+// ---------------------------------------------------------------------------
+/**
+ * Cycle the chrome: everything, side panels hidden, then just FuX.
+ *
+ * The button and the H key go through the same function so they can never
+ * drift apart, and the label always names what the *next* press does.
+ */
+function cyclePanels() {
+  panelMode = applyPanelMode(document.body, nextPanelMode(panelMode));
+  uiToggleLabel.textContent = PANEL_ACTION_LABELS[panelMode];
+  uiToggle.setAttribute('aria-pressed', String(panelMode !== 'full'));
+  const message = panelModeMessage(panelMode);
+  if (message && panelMode !== 'hidden') say(message, 3200);
+}
+
+// ---------------------------------------------------------------------------
 // Controls
 // ---------------------------------------------------------------------------
 async function selectAudioSource(id) {
   if (id === 'live') {
+    const environment = captureEnvironment();
     deck.setAudioNote('Requesting audio input…');
+    // Say so before the browser declines on the user's behalf: an embedded
+    // preview usually never shows a prompt, and an unexplained silence looks
+    // like the app is broken.
+    if (environment.embedded) {
+      deck.setMicHelp(captureBlocker(environment), {
+        label: 'Open in a new tab',
+        href: window.location.href,
+      });
+    }
+
     const ok = await engine.enableMicrophone();
     if (ok) {
       deck.setAudioSource('live');
+      deck.clearMicHelp();
       const label = engine.audio.live.labels;
       deck.setAudioNote(`Listening to ${label}. Speak, clap, or play music.`);
       say(`Audio input live — FuX is hearing the room via <b>${label}</b>.`);
+      return;
+    }
+
+    // Nothing to hear: keep the body moving rather than leaving the demo on a
+    // dead input, and be explicit that this is the demo signal, not the room.
+    const previous = engine.audio.source;
+    if (previous !== 'demo' && previous !== 'bridge') {
+      engine.setAudioSource('demo');
+      deck.setAudioSource('demo');
+      say('No audio input — back on the demo signal so FuX keeps moving.');
+    } else {
+      say('No audio input — FuX stays on the demo signal.');
     }
     return;
   }
@@ -441,9 +506,7 @@ function bindKeys() {
         break;
       }
       case 'h':
-        document.body.dataset.compact =
-          document.body.dataset.compact === 'true' ? 'false' : 'true';
-        say('Panels hidden. Press <b>H</b> to bring them back.');
+        cyclePanels();
         break;
       case ' ':
         event.preventDefault();
@@ -469,6 +532,10 @@ introStart.addEventListener('click', () => {
   engine.audio.demo.reset();
   say('FuX is awake. Click the mass to touch him.', 4200);
 });
+
+// The chip, and the key that does the same thing. Both call one function, so
+// the label on the button is always the truth about what happens next.
+uiToggle.addEventListener('click', cyclePanels);
 
 window.addEventListener('beforeunload', () => {
   engine?.dispose();
