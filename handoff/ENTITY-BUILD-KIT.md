@@ -3,8 +3,16 @@
   by tools/build-kit-to-markdown.mjs. Do not edit by hand — edit the
   source document and re-run `npm run docs:build-kit`.
 
+  FuX Chaos Engine - Magic Mirror Box UE5 Build Kit
+  Dated 2026-09-19.
+
   The text is machine-extracted, so it is faithful; the structure
   (headings, tables, code blocks) is recovered from the PDF layout.
+
+  Page furniture is not reproduced: the running heads and page numbers,
+  and the section number that sits above each title. Display type here is
+  tracked out letter by letter, so the cover kicker is reproduced the way
+  it is encoded — "M A G I C M I R R O R B O X" — rather than respaced.
 -->
 
 <!-- page 1 -->
@@ -15,11 +23,7 @@
 
 ## Chaos Engine
 
-A build kit for a living reactive intelligence
-
-formed from ferrofluid tension, smoke, and
-
-water-like motion.
+A build kit for a living reactive intelligence formed from ferrofluid tension, smoke, and water-like motion.
 
 FuX is the Chaos Engine. He is not an occupant inside the box. He is its reactive body - sensing every connected signal, changing state, and answering through motion.
 
@@ -136,15 +140,16 @@ Use one master material across a deforming black core and a thin transparent ski
 
 ### Black ferrofluid core
 
-Glossy near-black base with metallic response. Magnetic spike mask driven by pressure and threat. Slow viscous folding for symbiotic weight. Purple and lime light trapped beneath the surface.
+- Glossy near-black base with metallic response.
+- Magnetic spike mask driven by pressure and threat.
+- Slow viscous folding for symbiotic weight.
+- Purple and lime light trapped beneath the surface.
 
 ### Water, smoke, and memory
 
-Water-like currents travel around the skin.
-
-Smoke advects from motion, then curls back inward.
-
-Touch leaves a luminous ripple and fading scar.
+- Water-like currents travel around the skin.
+- Smoke advects from motion, then curls back inward.
+- Touch leaves a luminous ripple and fading scar.
 
 ### Runtime parameters
 
@@ -343,15 +348,11 @@ Event Tick (or 30 Hz timer)
 
 ### NS_FuX_SmokeBody + Sparks
 
-Smoke volume stays thin around the silhouette.
-
-Curl noise pulls vapor back toward the core.
-
-High-band audio triggers short magnetic sparks.
-
-Story reveal adds one controlled smoke bloom.
-
-Distance fade avoids glass clutter.
+- Smoke volume stays thin around the silhouette.
+- Curl noise pulls vapor back toward the core.
+- High-band audio triggers short magnetic sparks.
+- Story reveal adds one controlled smoke bloom.
+- Distance fade avoids glass clutter.
 
 <!-- page 10 -->
 

@@ -98,7 +98,8 @@ tuned with fails the build instead of shipping.
   Intel UHD 620-class hardware)
 - `chaos-lab/` — the build kit as a running prototype (interactive entity,
   Chaos resolver, mood system, MilkDrop-Shake bridge, session recorder)
-- `handoff/` — the build kit as markdown and the mood tables as CSV
+- `handoff/` — the build kit as markdown and the mood tables as CSV, with
+  a README explaining what is checked and what is not
 - `Content/` — the UE5 folder scaffold and the HLSL for the master material
 - `concept-art/` — visual direction renders
 - `protocol/` — spawn verification for the ICU ↔ Chaos Engine loop

@@ -21,12 +21,18 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { extractPage, classifyLine } from '../tools/build-kit-to-markdown.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const LAB = join(HERE, '..');
 const ROOT = join(LAB, '..');
 const DOC_PATH = join(ROOT, 'handoff', 'ENTITY-BUILD-KIT.md');
+const PDF_PATH = join(ROOT, 'docs', 'symbiote-entity-ue5-build-kit.pdf');
 const doc = readFileSync(DOC_PATH, 'utf8');
+
+/** Comparable words: markdown syntax and punctuation fall away. */
+const words = (text) => text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
 
 /** Run the converter and return its stdout, failing the test on a bad exit. */
 function runConverter(...args) {
@@ -52,6 +58,46 @@ describe('build kit markdown is current', () => {
   it('is a full transcription, not a summary', () => {
     const words = doc.split(/\s+/).filter(Boolean).length;
     expect(words).toBeGreaterThan(2200);
+  });
+
+  it('names the document and the date it was made, from the PDF itself', () => {
+    // The cover's title block is set in tracked-out capitals that leave no
+    // recoverable word breaks, so the header carries it instead — read from
+    // the PDF's metadata rather than typed in, so it cannot go stale.
+    const header = doc.slice(0, doc.indexOf('<!-- page 1 -->'));
+    expect(header).toContain('FuX Chaos Engine - Magic Mirror Box UE5 Build Kit');
+    expect(header).toMatch(/Dated \d{4}-\d{2}-\d{2}\./);
+  });
+
+  it('carries every word of the source, page for page', async () => {
+    // The check that makes the rest of this file worth trusting: extract each
+    // page again and require every readable word to appear in the markdown for
+    // that page. Anything the converter silently drops — a table cell beside a
+    // column boundary, a sentence spliced into another stream, a word lost to
+    // a ligature — shows up here as a missing token.
+    const pdf = new Uint8Array(readFileSync(PDF_PATH));
+    const document_ = await getDocument({ data: pdf, useSystemFonts: true }).promise;
+
+    const parts = doc.split(/<!-- page (\d+) -->/).slice(1);
+    const byPage = new Map();
+    for (let i = 0; i < parts.length; i += 2) byPage.set(Number(parts[i]), parts[i + 1]);
+
+    // Furniture the converter drops on purpose, and only this.
+    const FURNITURE = new Set(['footer', 'blank', 'section-number', 'decoration']);
+    const missing = [];
+
+    for (let page = 1; page <= document_.numPages; page += 1) {
+      const lines = await extractPage(document_, page);
+      const present = new Set(words(byPage.get(page) ?? ''));
+      for (const line of lines) {
+        if (FURNITURE.has(classifyLine(line).type)) continue;
+        for (const word of words(line.text)) {
+          if (!present.has(word)) missing.push(`p${page} "${word}"`);
+        }
+      }
+    }
+
+    expect([...new Set(missing)]).toEqual([]);
   });
 });
 

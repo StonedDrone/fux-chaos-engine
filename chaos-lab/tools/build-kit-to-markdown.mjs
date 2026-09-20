@@ -31,7 +31,7 @@
 
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -56,6 +56,14 @@ const LAYOUT = {
     { heading: 'What the audience sees', kind: 'ul' },
     // "Core rule:" is a callout sitting under this heading, not a list item.
     { heading: 'What it is not', kind: 'ul', exclude: /^Core rule:/ },
+    // The two material headings, and the smoke system's behaviour list, are
+    // bulleted in the source. Their bullets are drawn as shapes rather than
+    // glyphs, and the item gap (19.5pt) sits a tenth of a point above the
+    // paragraph-break threshold, so they are declared here and checked against
+    // the page.
+    { heading: 'Black ferrofluid core', kind: 'ul' },
+    { heading: 'Water, smoke, and memory', kind: 'ul' },
+    { heading: 'NS_FuX_SmokeBody + Sparks', kind: 'ul' },
   ],
   // Tables whose first row is content rather than a header, so markdown gets
   // a real header instead of promoting a data row.
@@ -67,7 +75,7 @@ const LAYOUT = {
 // ---------------------------------------------------------------------------
 
 /** Pull one page into geometry-aware lines. */
-async function extractPage(doc, pageNumber) {
+export async function extractPage(doc, pageNumber) {
   const page = await doc.getPage(pageNumber);
   const content = await page.getTextContent();
 
@@ -125,7 +133,7 @@ const COLUMN_GAP = 6;
  * Runs with neither a space nor a gap between them are one word, which is how
  * ligatures arrive: "hando" + "ff" is the single cell "handoff", not two.
  */
-function joinCells(cells) {
+export function joinCells(cells) {
   let text = '';
   let pendingSpace = false;
   let previousEnd = null;
@@ -236,7 +244,7 @@ function gutterSpans(line) {
  * boundary, and cutting one in half is how the runtime-parameters table was
  * destroyed.
  */
-function splitStreams(lines, tableIndices = new Set()) {
+export function splitStreams(lines, tableIndices = new Set()) {
   const spans = [];
   lines.forEach((line, index) => {
     if (!line.columns.length) return;
@@ -274,10 +282,23 @@ function splitStreams(lines, tableIndices = new Set()) {
 // ---------------------------------------------------------------------------
 
 /** Decide what each line is, using the geometry rules documented above. */
-function classifyLine(line) {
+export function classifyLine(line) {
   const { text, height, fonts, y, columns } = line;
 
-  if (y < FOOTER_Y) return { type: 'footer', text };
+  // The band above this y is the running head — a section title and its page
+  // number, on every page but the first. The first page carries the document's
+  // version stamp up there instead, and that is worth keeping.
+  if (y < FOOTER_Y) {
+    // Every running head in this document is letter-spaced. The cover's
+    // masthead — author, document name, version, date — sits in the same band
+    // and is the one line up there worth keeping.
+    // Every line in this band is tracked out letter by letter — the running
+    // heads on pages 2 to 11 and the cover's own masthead. Tracking that wide
+    // destroys the word boundaries, so none of it can be reproduced faithfully
+    // as text; the cover's masthead is carried in the header of this document
+    // instead, from the PDF's own metadata.
+    return { type: 'footer', text };
+  }
   if (!text) return { type: 'blank', text };
 
   // Connector arrows and other purely graphical glyph runs.
@@ -419,6 +440,22 @@ function renderTable(lines, syntheticHeader = null) {
  * separable from a paragraph (leading 21) without a magic constant.
  */
 function reflowBody(lines) {
+  // One run can hold more than one block. The cover sets a 15pt subtitle above
+  // an 11pt paragraph, and the leading inside either block would look like a
+  // paragraph break if both were measured together, so the run is split by
+  // size first and each block is reflowed on its own terms.
+  const segments = [];
+  for (const line of lines) {
+    const last = segments[segments.length - 1];
+    if (last && Math.abs(last.height - line.height) <= 1.5) last.lines.push(line);
+    else segments.push({ height: line.height, lines: [line] });
+  }
+
+  return segments.map((segment) => reflowSegment(segment.lines)).filter(Boolean).join('\n\n');
+}
+
+/** Reflow lines of one size into paragraphs. */
+function reflowSegment(lines) {
   const gaps = [];
   for (let i = 1; i < lines.length; i += 1) {
     const gap = lines[i - 1].y - lines[i].y;
@@ -431,7 +468,10 @@ function reflowBody(lines) {
     const sorted = [...gaps].sort((a, b) => a - b);
     spacing = Math.max(8, sorted[Math.floor(sorted.length * 0.25)]);
   }
-  const breakAt = spacing * 1.25;
+  // The document separates list items from their own wrapped lines by about
+  // 1.24x the leading (15.0pt inside an item, 19.5pt between items), so the
+  // threshold sits below that with the observed variation as headroom.
+  const breakAt = spacing * 1.18;
 
   const paragraphs = [];
   let current = [];
@@ -459,7 +499,7 @@ function reflowBody(lines) {
 }
 
 /** Build the markdown for one page. */
-function renderPage(pageLines, pageNumber) {
+export function renderPage(pageLines, pageNumber) {
   const tableRuns = findTableRuns(pageLines);
   const tableIndices = new Set();
   for (const run of tableRuns) {
@@ -725,15 +765,29 @@ function renderFlow(lines, tableRuns) {
 // Assembly
 // ---------------------------------------------------------------------------
 
-function assemble(pages) {
+/** `D:20260919015830+00'00'` -> `2026-09-19`. */
+function pdfDate(value) {
+  const match = /^D:(\d{4})(\d{2})(\d{2})/.exec(value ?? '');
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+}
+
+function assemble(pages, info = {}) {
   const out = [];
   out.push('<!--');
   out.push('  Generated from docs/symbiote-entity-ue5-build-kit.pdf');
   out.push('  by tools/build-kit-to-markdown.mjs. Do not edit by hand — edit the');
   out.push('  source document and re-run `npm run docs:build-kit`.');
   out.push('');
+  if (info.title) out.push(`  ${info.title}`);
+  if (info.date) out.push(`  Dated ${info.date}.`);
+  if (info.title) out.push('');
   out.push('  The text is machine-extracted, so it is faithful; the structure');
   out.push('  (headings, tables, code blocks) is recovered from the PDF layout.');
+  out.push('');
+  out.push('  Page furniture is not reproduced: the running heads and page numbers,');
+  out.push('  and the section number that sits above each title. Display type here is');
+  out.push('  tracked out letter by letter, so the cover kicker is reproduced the way');
+  out.push('  it is encoded — "M A G I C M I R R O R B O X" — rather than respaced.');
   out.push('-->');
   out.push('');
 
@@ -824,7 +878,12 @@ function applyLists(markdown) {
 
       const out = [];
       for (const block of blocks) {
-        // A callout is not a list item, whatever heading it sits under.
+        // A callout is not a list item, whatever heading it sits under, and a
+        // page marker is not part of the list it happens to follow.
+        if (block.startsWith('<!--')) {
+          out.push('', block);
+          continue;
+        }
         if (block.startsWith('>') || rule.exclude?.test(block)) {
           out.push(block);
           continue;
@@ -857,7 +916,11 @@ async function main() {
     pages.push(renderPage(lines, n));
   }
 
-  const markdown = applyLists(assemble(pages));
+  const info = await doc.getMetadata();
+  const markdown = applyLists(assemble(pages, {
+    title: info.info?.Title ?? null,
+    date: pdfDate(info.info?.CreationDate),
+  }));
 
   if (process.argv.includes('--check')) {
     if (!existsSync(OUT_PATH)) {
@@ -878,4 +941,7 @@ async function main() {
   console.log(`Wrote ${OUT_PATH} — ${doc.numPages} pages, ${words} words.`);
 }
 
-await main();
+// Imported by the test suite for its extractor; run as a CLI otherwise.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}

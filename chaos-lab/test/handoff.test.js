@@ -119,6 +119,54 @@ describe('the HLSL port of the material graph', () => {
     expect(unresolved, `undefined calls: ${unresolved.join(', ')}`).toEqual([]);
   });
 
+  it('every variable a function uses is its own parameter, local, or a constant', () => {
+    // The same self-containment rule one level down. A Custom node sees its
+    // own body and nothing else, so an identifier that is not a parameter, a
+    // local, a #define, or an intrinsic would be a compile error in the editor
+    // — and a typo like `BreathAmt` is exactly the kind of thing that survives
+    // review in a file nobody here can compile.
+    const KEYWORDS = new Set(['if', 'else', 'for', 'while', 'return', 'const',
+      'float', 'float2', 'float3', 'float4', 'int', 'void', 'true', 'false']);
+    const DEFINES = new Set([...hlslCode.matchAll(/#define\s+(\w+)/g)].map((m) => m[1]));
+    const FUNCTIONS = new Set([...hlslCode.matchAll(/^\s*(?:float3?|void)\s+(\w+)\s*\(/gm)].map((m) => m[1]));
+
+    const signature = /^\s*(?:float3?)\s+(\w+)\s*\(/gm;
+    const unresolved = [];
+    let match;
+
+    while ((match = signature.exec(hlslCode))) {
+      const name = match[1];
+      const open = hlslCode.indexOf('{', match.index);
+      let depth = 0;
+      let end = open;
+      for (; end < hlslCode.length; end += 1) {
+        if (hlslCode[end] === '{') depth += 1;
+        if (hlslCode[end] === '}') {
+          depth -= 1;
+          if (depth === 0) break;
+        }
+      }
+
+      const header = hlslCode.slice(match.index, open);
+      const body = hlslCode.slice(open + 1, end);
+      const scoped = new Set([
+        ...[...header.matchAll(/(?:float3?|int)\s+(\w+)\s*(?:=[^,)]*)?(?=[,)])/g)].map((x) => x[1]),
+        ...[...body.matchAll(/(?:float3?|int)\s+(\w+)\s*=/g)].map((x) => x[1]),
+        ...[...body.matchAll(/for\s*\(\s*int\s+(\w+)/g)].map((x) => x[1]),
+      ]);
+
+      // Swizzles are member access, not identifiers of their own.
+      const used = [...body.replace(/\.\w+/g, '').matchAll(/\b([A-Za-z_]\w*)\b/g)].map((x) => x[1]);
+      for (const id of used) {
+        if (KEYWORDS.has(id) || HLSL_INTRINSICS.has(id)) continue;
+        if (DEFINES.has(id) || FUNCTIONS.has(id) || scoped.has(id)) continue;
+        unresolved.push(`${name}: ${id}`);
+      }
+    }
+
+    expect([...new Set(unresolved)]).toEqual([]);
+  });
+
   it('keeps the kit equations verbatim in structure', () => {
     expect(hlsl).toContain('pow(saturate(noise * Pressure), 5.0)');
     expect(hlsl).toContain('sin(Time * BreathRate) * BreathAmount');
@@ -160,6 +208,24 @@ describe('the HLSL port of the material graph', () => {
     // scaled twice tears the silhouette apart.
     expect(hlsl).toMatch(/#define\s+FUX_CM_TO_M\s+0\.01/);
     expect(hlsl.match(/FUX_CM_TO_M/g)?.length ?? 0).toBe(2);
+  });
+
+  it('names, in the materials README, only functions that exist', () => {
+    // The README is how somebody wires the nodes by hand; a function that has
+    // been renamed in the HLSL must not be left behind in the table there.
+    const readme = readFileSync(join(CONTENT, 'Materials', 'README.md'), 'utf8');
+    const table = readme.slice(readme.indexOf('| Node |'), readme.indexOf('## Shading'));
+    // The second column of that table is the function each node pastes in;
+    // the parameter-collection table elsewhere in the file names things that
+    // are not functions at all.
+    const named = table
+      .split('\n')
+      .filter((row) => row.startsWith('|') && !row.startsWith('| ---') && !row.startsWith('| Node'))
+      .flatMap((row) => [...row.split('|')[2].matchAll(/`(\w+)`/g)].map((m) => m[1]));
+    expect(named.length).toBeGreaterThan(6);
+    for (const fn of new Set(named)) {
+      expect(hlsl, `${fn} is documented but not defined`).toMatch(new RegExp(`\\b${fn}\\s*\\(`));
+    }
   });
 
   it('carries the safety clamp that priority one calls for', () => {

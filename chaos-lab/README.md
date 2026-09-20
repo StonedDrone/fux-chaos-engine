@@ -231,7 +231,7 @@ declared in GLSL exists in the material's uniform map, that varyings match
 across stages, and that every custom attribute is supplied by the geometry.
 Those are the failure modes that otherwise show up only as a black canvas.
 
-The 170 tests cover the chaos bands, mood blending, the priority stack, the
+The 174 tests cover the chaos bands, mood blending, the priority stack, the
 reaction packet lifecycle, the safety clamps, the prototype budgets, bridge
 handling and failure, the recorder, the performance guard, and the handoff
 pack.
