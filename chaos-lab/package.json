@@ -1,0 +1,28 @@
+{
+  "name": "fux-chaos-lab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Interactive browser prototype of FuX, the reactive ferrofluid entity from the Magic Mirror Box UE5 build kit.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint:glsl": "node tools/glsl-lint.mjs",
+    "verify": "npm run lint:glsl && npm run test",
+    "bridge": "node tools/bridge-demo.mjs"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@shaderfrog/glsl-parser": "^7.0.1",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

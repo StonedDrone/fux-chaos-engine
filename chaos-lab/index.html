@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>FuX Chaos Engine — Chaos Lab</title>
+    <meta
+      name="description"
+      content="Interactive prototype of FuX, the reactive ferrofluid entity from the Magic Mirror Box UE5 build kit."
+    />
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <div id="stage" class="stage"></div>
+
+    <header class="masthead" id="masthead">
+      <h1>FuX<span class="dot">·</span>Chaos<span class="thin">Lab</span></h1>
+      <p class="tagline">
+        One fluid body · ferrofluid tension + symbiote motion + smoke + water flow
+      </p>
+    </header>
+
+    <section class="readout" id="readout" aria-live="polite"></section>
+
+    <aside class="deck" id="deck" aria-label="Control deck"></aside>
+
+    <footer class="banner" id="banner"></footer>
+
+    <div class="intro" id="intro">
+      <div class="intro-card">
+        <p class="intro-kicker">Magic Mirror Box / build kit p.3</p>
+        <h2>“FuX sees the room, absorbs what happens, and chooses how his fluid body answers.”</h2>
+        <p class="intro-body">
+          This is the reactive body from <code>docs/symbiote-entity-ue5-build-kit.pdf</code>, running
+          as a live prototype so the material graph, the Chaos resolver, and the four moods can be
+          tuned before any engine time is spent.
+        </p>
+        <ul class="intro-list">
+          <li><b>Click or drag on the mass</b> — touch ripple and a fading scar</li>
+          <li><b>Move the pointer</b> — FuX leans toward what he is watching</li>
+          <li><b>Keys:</b> <kbd>1</kbd> audio in · <kbd>3</kbd> demo signal · <kbd>S</kbd> silence</li>
+          <li><kbd>C</kbd> <kbd>J</kbd> <kbd>O</kbd> <kbd>W</kbd> cue a mood · <kbd>X</kbd> system spike · <kbd>V</kbd> story cue</li>
+        </ul>
+        <button class="intro-start" id="introStart">Wake the entity</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
