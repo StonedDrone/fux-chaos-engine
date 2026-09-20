@@ -13,7 +13,8 @@ npm run dev        # http://localhost:5173
 ```
 
 Click or drag on the mass to touch it, move the pointer to make FuX lean
-toward you, and press `3` for the demo signal.
+toward you, and press `3` for the demo signal. He is a lump of ferrofluid, not
+a sphere: the silhouette is a field, and it never stops moving.
 
 ---
 
@@ -108,6 +109,38 @@ packets, normalise, resolve priority/mood/memory, smooth, decay, clamp, apply,
 store the trace — with visual parameters at 30 Hz while the render loop runs
 free.
 
+### The body
+
+FuX is not a sphere with a texture on it. His silhouette is a radius that
+varies with direction and time — four rounded lobes orbiting a slow swirl of
+noise — and every mesh in the body evaluates the same field, so the core, the
+water skin, the tendrils, and the smoke all agree about where the surface is.
+A tendril anchored to a sphere while the core bulges past it is a visible seam;
+the skin is the worst case, since it would be swallowed by its own core.
+
+The shape is the one part of this prototype that cannot be judged from a
+contract test, and there is no browser in the environment this was built in, so
+it is drawn instead:
+
+```bash
+npm run body:report      # measures the field, renders reference/body-shape.png
+```
+
+That writes a sheet of the same body at several moments, at rest and at full
+chaos, with the unit sphere dashed behind it, and prints four numbers that
+describe the *look* rather than the amount of deviation: how many swells the
+silhouette carries, how far apart they are, how steep they get, and how much of
+the change is concentrated into spikes. The first version of this field
+deviated from a sphere exactly as far as the current one does and read as a sea
+urchin — ten evenly spaced bumps with tips — which is why those numbers exist,
+and why `test/body.test.js` asserts them.
+
+`src/core/params.js` holds the constants, `src/render/shaders/body.glsl.js` is
+what the GPU runs, and `src/render/bodyShape.js` is the same field in
+JavaScript, for measuring and drawing it. The two are mirrored by hand, so the
+constants are checked in both directions and the recorded silhouette is checked
+against the numbers the render was made from.
+
 ### The priority stack (p.7)
 
 ```
@@ -161,14 +194,18 @@ src/
   render/
     entity.js            BP_FuXChaosEngine — the component tree
     quality.js           tiers and the performance guard
-    shaders/             core, skin, tendrils, particles, shared noise
+    bodyShape.js         the body field in JS, for measuring and drawing
+    shaders/             core, skin, tendrils, particles, body, shared noise
   audio/
     analysis.js          demo signal, live analyser, bridge receiver
   ui/                    readout, control deck, styles
 tools/
   bridge-demo.mjs        MilkDrop-Shake packet source (no dependencies)
   glsl-lint.mjs          parses every shader without a GL context
-test/                    140 tests
+  body-shape-report.mjs  measures the body field and renders it to a PNG
+reference/
+  body-shape.png         that render: the silhouette at rest and at chaos
+test/                    236 tests
 ```
 
 ### Component tree
@@ -263,6 +300,7 @@ Press `Q` to pin a tier manually; auto-scaling switches off when you do.
 npm run verify     # GLSL parse check, the doc freshness checks, then the tests
 npm run docs:build-kit   # regenerate handoff/ENTITY-BUILD-KIT.md from the PDF
 npm run docs:moods       # regenerate handoff/moods/*.csv from src/core/moods.js
+npm run body:report      # remeasure the body field, redraw reference/body-shape.png
 ```
 
 There is no GL context in CI, so the shaders are validated by parsing them
@@ -271,10 +309,14 @@ declared in GLSL exists in the material's uniform map, that varyings match
 across stages, and that every custom attribute is supplied by the geometry.
 Those are the failure modes that otherwise show up only as a black canvas.
 
-The 211 tests cover the chaos bands, mood blending, the priority stack, the
+The 236 tests cover the chaos bands, mood blending, the priority stack, the
 reaction packet lifecycle, the safety clamps, the prototype budgets, bridge
 handling and failure, the recorder, the performance guard, the panel modes and
-the microphone environment checks, and the handoff pack. The interface itself
+the microphone environment checks, and the handoff pack. The body gets its own
+file: the silhouette is measured rather than eyeballed — how many swells it
+carries, how steep they get, how far the surface moves per second, and how much
+of the field the GPU and the measurement agree on — because "he looks like a
+sea urchin" turned out to be a thing that could have been asserted. The interface itself
 is exercised as real DOM in `test/ui-dom.test.js` — the deck's checkboxes, the
 readout's close button, and the dialog's focus handling — because that is the
 part a shader contract test can never see.

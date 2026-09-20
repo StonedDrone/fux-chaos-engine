@@ -12,6 +12,7 @@
  */
 
 import { noiseGLSL } from './noise.glsl.js';
+import { bodyGLSL } from './body.glsl.js';
 
 export const coreVertexShader = /* glsl */ `
 precision highp float;
@@ -36,6 +37,9 @@ uniform float uAudioMid;
 uniform float uAudioHigh;
 uniform float uSafety;
 
+// How far the fluid body deviates from round right now — see params.js BODY.
+uniform float uBodyAmount;
+
 // Touch + attention.
 uniform vec3  uTouchPoint;
 uniform float uTouchStrength;
@@ -55,9 +59,25 @@ varying float vSurfaceDetail;
 
 ${noiseGLSL}
 
+${bodyGLSL}
+
 void main() {
   vec3 localPos = position;
-  vec3 nrm = normalize(normal);
+
+  // ---------------------------------------------------------------------
+  // The body itself.
+  //
+  // FuX is ferrofluid, not a ball: the silhouette is a function of direction
+  // that never stops moving, and every mesh evaluates the same one. The real
+  // surface normal comes from that field, which is what makes the lumps read
+  // as form — without it the lighting is computed for a sphere and the shape
+  // disappears into a shaded blob.
+  // ---------------------------------------------------------------------
+  vec3 dir = normalize(localPos);
+  // The radius comes from the vertex, not a constant, so a differently sized
+  // core mesh deforms by the same proportions.
+  vec3 bodyPoint = fuxBodyPoint(dir, length(localPos), uTime, uBodyAmount);
+  vec3 nrm = fuxBodyNormal(dir, uTime, uBodyAmount);
 
   // Constant-volume trick: ferrofluid is incompressible, so when the body is
   // pulled inward it must swell somewhere else. Scaling against the normal
@@ -172,7 +192,9 @@ void main() {
 
   // Displace is authored in centimetres (build kit p.4) and converted to
   // model units here, so the mood assets keep the numbers the kit specifies.
-  vec3 displaced = localPos * squash + displaceVec * uDisplace * uDisplaceScale;
+  // The body point is the base the reaction displaces, so the mass deforms
+  // around its own changing shape rather than around a sphere.
+  vec3 displaced = bodyPoint * squash + displaceVec * uDisplace * uDisplaceScale;
 
   vSurfaceDetail = foldField;
 

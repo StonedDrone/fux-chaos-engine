@@ -12,6 +12,7 @@
  */
 
 import { noiseGLSL } from './noise.glsl.js';
+import { bodyGLSL } from './body.glsl.js';
 
 export const tendrilVertexShader = /* glsl */ `
 precision highp float;
@@ -32,6 +33,11 @@ uniform float uTouchStrength;
 // index collapse to the surface and are discarded in the fragment stage.
 uniform float uActiveCount;
 
+// Where the mass actually is: tendrils have to root in the moving surface, not
+// on the sphere the mesh was built from, or they visibly detach from him.
+uniform float uBodyAmount;
+uniform float uCoreRadius;
+
 attribute float aAlong;     // 0 at the core surface, 1 at the tip
 attribute float aAcross;    // -1 .. +1 across the ribbon width
 attribute vec3  aDirection; // unit vector from the core surface outward
@@ -46,10 +52,12 @@ varying float vAlive;
 
 ${noiseGLSL}
 
+${bodyGLSL}
+
 /** Evaluate one point on a tendril's curve. */
 vec3 tendrilPoint(vec3 baseDir, float t, float seed) {
-  // Spawn from core surface.
-  vec3 surfacePt = baseDir * 1.0;
+  // Spawn from the surface of the mass, wherever the body has moved it to.
+  vec3 surfacePt = fuxBodyPoint(baseDir, uCoreRadius, uTime, uBodyAmount) * (1.0 / uCoreRadius);
 
   // Length responds to chaos and answers the low band.
   float len = uLength * (0.45 + uChaos * 1.05) * (0.75 + uAudioLow * 0.55);
@@ -91,7 +99,9 @@ void main() {
   float t = aAlong;
 
   vec3 p = tendrilPoint(baseDir, t, aSeed);
-  p = mix(baseDir, p, alive);   // inactive -> rest on the core surface
+  // An inactive tendril rests on the body surface rather than inside it.
+  vec3 restPt = fuxBodyPoint(baseDir, 1.0, uTime, uBodyAmount);
+  p = mix(restPt, p, alive);
 
   // Finite difference for a true curve tangent.
   const float eps = 0.035;

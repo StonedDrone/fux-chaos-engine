@@ -22,7 +22,7 @@ import { coreFragmentShader } from './shaders/core.frag.js';
 import { skinVertexShader, skinFragmentShader } from './shaders/skin.glsl.js';
 import { tendrilVertexShader, tendrilFragmentShader } from './shaders/tendril.glsl.js';
 import { particleVertexShader, particleFragmentShader } from './shaders/particles.glsl.js';
-import { makeRandom } from '../core/params.js';
+import { bodyAmount, makeRandom } from '../core/params.js';
 import { QUALITY } from './quality.js';
 
 /**
@@ -74,6 +74,9 @@ export class FuXEntity {
         uTime: { value: 0 },
         uDisplace: { value: 2.0 },        // centimetres, straight from the mood
         uDisplaceScale: { value: 0.028 }, // cm -> model units
+        // The fluid body: how far the silhouette deviates from round. Driven
+        // from chaos and the safety clamp in applyFrame.
+        uBodyAmount: { value: bodyAmount() },
         uBreathRate: { value: 0.35 },
         uFlowSpeed: { value: 0.12 },
         uEdgeSharpness: { value: 3.5 },
@@ -132,6 +135,7 @@ export class FuXEntity {
         uBreath: { value: 0.5 },
         uSafety: { value: 0 },
         uSkinRadius: { value: 1.16 },
+        uBodyAmount: { value: bodyAmount() },
         uAttention: { value: 0 },
         uTouchPoint: { value: new THREE.Vector3(0, 2, 0) },
         uTouchStrength: { value: 0 },
@@ -248,6 +252,8 @@ export class FuXEntity {
         uTouchPoint: { value: new THREE.Vector3(0, 2, 0) },
         uTouchStrength: { value: 0 },
         uActiveCount: { value: count },
+        uBodyAmount: { value: bodyAmount() },
+        uCoreRadius: { value: this.coreRadius },
         uColorPrimary: { value: new THREE.Color('#6a2cff') },
         uColorSecondary: { value: new THREE.Color('#b6ff1a') },
       },
@@ -322,6 +328,8 @@ export class FuXEntity {
       uniforms: {
         uTime: { value: 0 },
         uMode: { value: 0 },
+        uBodyAmount: { value: bodyAmount() },
+        uCoreRadius: { value: this.coreRadius },
         uChaos: { value: 0 },
         uEnergy: { value: 0 },
         uAudioLow: { value: 0 },
@@ -447,8 +455,15 @@ export class FuXEntity {
     const safety = f.safety ? 1 : 0;
     const core = this.coreMaterial.uniforms;
 
+    // The body's own shape: at rest it is already uneven and moving, and it
+    // loosens further as chaos climbs. Low-stimulation mode calms it without
+    // ever stilling it — "silence still feels alive" (build kit p.10), and the
+    // same silhouette is evaluated by every mesh so the layers stay married.
+    const body = bodyAmount({ chaos, safety });
+
     // --- Core -------------------------------------------------------------
     core.uTime.value = this.time;
+    core.uBodyAmount.value = body;
     core.uChaos.value = chaos;
     core.uPressure.value = f.pressure;
     core.uSpikeBias.value = f.spikes * 6 + 0.05;
@@ -479,6 +494,7 @@ export class FuXEntity {
     // --- Skin -------------------------------------------------------------
     const skin = this.skinMaterial.uniforms;
     skin.uTime.value = this.time;
+    skin.uBodyAmount.value = body;
     skin.uChaos.value = chaos;
     skin.uAudioMid.value = f.audio.mid;
     skin.uAudioHigh.value = f.audio.high;
@@ -498,6 +514,7 @@ export class FuXEntity {
     // --- Tendrils ---------------------------------------------------------
     const ten = this.tendrilMaterial.uniforms;
     ten.uTime.value = this.time;
+    ten.uBodyAmount.value = body;
     ten.uChaos.value = chaos;
     ten.uAudioLow.value = f.audio.low;
     ten.uAudioMid.value = f.audio.mid;
@@ -520,6 +537,7 @@ export class FuXEntity {
     const smoke = this.smokeMaterial.uniforms;
     smoke.uMode.value = 0;
     smoke.uTime.value = this.time;
+    smoke.uBodyAmount.value = body;
     smoke.uChaos.value = chaos;
     smoke.uEnergy.value = f.audio.energy;
     smoke.uAudioLow.value = f.audio.low;
@@ -535,6 +553,7 @@ export class FuXEntity {
 
     const spark = this.sparkMaterial.uniforms;
     spark.uMode.value = 1;
+    spark.uBodyAmount.value = body;
     spark.uTime.value = this.time;
     spark.uChaos.value = chaos;
     spark.uEnergy.value = f.audio.energy;

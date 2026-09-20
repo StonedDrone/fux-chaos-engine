@@ -16,12 +16,15 @@
  */
 
 import { noiseGLSL } from './noise.glsl.js';
+import { bodyGLSL } from './body.glsl.js';
 
 export const particleVertexShader = /* glsl */ `
 precision highp float;
 
 uniform float uTime;
-uniform float uMode;        // 0 = smoke, 1 = sparks
+uniform float uMode;              // 0 = smoke, 1 = sparks
+uniform float uBodyAmount;
+uniform float uCoreRadius;
 uniform float uChaos;
 uniform float uEnergy;
 uniform float uAudioLow;
@@ -47,6 +50,8 @@ varying float vIsSpark;
 
 ${noiseGLSL}
 
+${bodyGLSL}
+
 void main() {
   float isSpark = step(0.5, uMode);
 
@@ -67,7 +72,10 @@ void main() {
   float rise = pow(life, 0.7);
   float smokeReach = mix(0.9, 2.5, uSmokeCurl) * (0.55 + uChaos * 0.7) * (0.7 + uAudioLow * 0.4);
 
-  vec3 smokePos = dir * (1.02 + rise * smokeReach);
+  // Peel off the moving surface: the shell the particle leaves from is the
+  // body's own silhouette, slightly proud of it.
+  vec3 shellPt = fuxBodyPoint(dir, uCoreRadius * 1.02, uTime, uBodyAmount * BODY_PARTICLE_FOLLOW);
+  vec3 smokePos = shellPt + dir * rise * smokeReach;
 
   // Curl advection: the vapour is carried by its own field.
   vec3 curl = curlNoise(dir * 1.6 + vec3(0.0, uTime * 0.16, 0.0));
@@ -82,7 +90,8 @@ void main() {
   // Sparks: short magnetic discharges along the surface.
   // ------------------------------------------------------------------
   float sparkLife = pow(1.0 - life, 0.5);
-  vec3 sparkPos = dir * (1.0 + life * 0.75 * (0.6 + uChaos * 0.8));
+  vec3 sparkPos = fuxBodyPoint(dir, uCoreRadius, uTime, uBodyAmount * BODY_PARTICLE_FOLLOW)
+    + dir * life * 0.75 * (0.6 + uChaos * 0.8);
   sparkPos += curl * life * 0.22;
 
   vec3 pos = mix(smokePos, sparkPos, isSpark);

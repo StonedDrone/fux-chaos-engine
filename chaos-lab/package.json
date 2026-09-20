@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint:glsl": "node tools/glsl-lint.mjs",
+    "body:report": "node tools/body-shape-report.mjs",
     "docs:build-kit": "node tools/build-kit-to-markdown.mjs",
     "verify": "npm run lint:glsl && npm run docs:build-kit -- --check && npm run docs:moods -- --check && npm run test",
     "bridge": "node tools/bridge-demo.mjs",

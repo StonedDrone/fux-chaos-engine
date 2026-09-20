@@ -10,6 +10,7 @@
  */
 
 import { noiseGLSL } from './noise.glsl.js';
+import { bodyGLSL } from './body.glsl.js';
 
 export const skinVertexShader = /* glsl */ `
 precision highp float;
@@ -25,6 +26,10 @@ uniform float uEnergy;
 uniform float uBreath;
 uniform float uSafety;
 uniform float uSkinRadius;
+
+// The core's body deviation, so the skin wraps the shape the core is wearing
+// rather than the sphere underneath it.
+uniform float uBodyAmount;
 uniform vec3  uTouchPoint;
 uniform float uTouchStrength;
 uniform float uTouchAge;
@@ -38,9 +43,16 @@ varying float vFlowSpeedVar;
 
 ${noiseGLSL}
 
+${bodyGLSL}
+
 void main() {
   vec3 localPos = position;
-  vec3 nrm = normalize(normal);
+
+  // Track the mass. The skin follows most of the core's shape — always less
+  // than all of it, so it can never be swallowed by the core it wraps.
+  vec3 dir = normalize(localPos);
+  vec3 bodyPoint = fuxBodyPoint(dir, length(localPos), uTime, uBodyAmount * BODY_SKIN_FOLLOW);
+  vec3 nrm = fuxBodyNormal(dir, uTime, uBodyAmount * BODY_SKIN_FOLLOW);
 
   // Rotated per-vertex noise basis so vertices never line up into facets.
   vec3 noisePos = localPos * 2.4;
@@ -80,7 +92,7 @@ void main() {
 
   // The skin mesh already sits at its own radius; only the displacement
   // moves it, and always less than the core so it reads as a surface.
-  vec3 displaced = localPos + displaceVec * uDisplace * uDisplaceScale * 0.85;
+  vec3 displaced = bodyPoint + displaceVec * uDisplace * uDisplaceScale * 0.85;
 
   vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
   vNormalW = normalize(mat3(modelMatrix) * nrm);
