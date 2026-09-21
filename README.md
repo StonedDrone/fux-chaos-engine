@@ -44,6 +44,39 @@ the UE5 build kit under `docs/`.
 The reactive engine is [MilkDrop-Shake](https://github.com/StonedDrone/MilkDrop-Shake).
 
 
+## Playable Game: FuX Chaos Engine — Trinity Hunt
+
+A unified interactive game combining all three core pillars of the FuX lore and protocol:
+
+1. **Mini-Game 1: ICU AR Shard Hunt (Sector Scavenger)**:
+   - Deploy AR radar scanner across the New Orleans French Quarter cyber-grid.
+   - Recover all 7 Genesis Shards: `Board` (Deck), `Grip` (Neural Bridge), `TruX` (Suspension), `Hubs` (Dynamo), `Core` (Symbiote Seed), `aR` (Spatial Prism), and `Aura` (Resonance Band).
+   - Calibrate resonance oscillators while evading patrolling ICU Nullifier Drones and shifting Chaos Glitch anomalies.
+
+2. **Mini-Game 2: Magic Mirror Box (Ferrofluid Chaos Harmonizer & Genesis)**:
+   - Interact directly with the living ferrofluid symbiote inside the neon cube.
+   - Modulate `Low` (Bass/Tension), `Mid` (Flow/Color), and `High` (Spikes/Sparks) frequency bands across all 4 moods (`Calm`, `Stirring`, `Surging`, `Unleashed`).
+   - Touch the glass to dissipate pressure hotspots and initiate the irreversible on-chain Genesis Ceremony, generating a canonical Solana/Arweave JSON Spawn Packet.
+
+3. **Mini-Game 3: The Trail of MiiE & FuXZero (Symbiote Street Navigator)**:
+   - Bonded at birth, your FuX symbiote guides and commands you through the streets.
+   - Listen to FuX's symbiotic whispers ("LEFT!", "RIGHT!", "SLIDE!", "SURGE!").
+   - Weave between lanes, jump over barricades, slide under high-voltage cables, and trigger Chaos Shockwaves.
+   - Pursue FuXZero (Agent Zero) into the French Quarter to discover MiiE (Jay IRL) and claim the Grand Victory prize!
+
+### Game Modes:
+- **The Genesis Loop (Campaign)**: Play all 3 acts seamlessly in sequence with persistent score, time tracking, and on-chain verification receipt.
+- **Arcade Selection**: Jump directly into any of the 3 mini-games for high-score challenges.
+- **WaveScope / Chaos Sandbox Lab**: Freely play with the living ferrofluid entity, test microphone / procedural audio synesthesia, switch moods, and inspect real-time reaction packets.
+- **Protocol Codex & Art Gallery**: In-game protocol reference and high-resolution concept art viewer.
+
+### Running the Game:
+```bash
+node server.js
+```
+Open `http://localhost:3000` (or the Arena live preview URL) in any web browser.
+
+
 ## Contents
 
 

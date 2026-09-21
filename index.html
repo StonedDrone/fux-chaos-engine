@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FuX: Chaos Engine — Trinity Hunt</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Top Header -->
+    <header id="top-header">
+      <div class="logo-group" id="nav-logo">
+        <span class="logo-badge">FuX</span>
+        <div>
+          <div class="logo-title">CHAOS ENGINE</div>
+          <div class="logo-subtitle">TRINITY HUNT • MAGIC MIRROR BOX</div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- Live Chaos Meter -->
+        <div class="chaos-indicator">
+          <div class="chaos-pulse-dot"></div>
+          <span class="chaos-text">CHAOS: <span id="chaos-value">20</span>/100 [<span id="chaos-label">CALM</span>]</span>
+        </div>
+
+        <!-- 7 Shard Slots -->
+        <div class="header-shards" title="Seven Genesis Shards: Board, Grip, TruX, Hubs, Core, aR, Aura">
+          <div class="shard-slot-icon" id="shard-icon-0" title="Board: Deck Foundation">🛹</div>
+          <div class="shard-slot-icon" id="shard-icon-1" title="Grip: Neural Bridge">⚡</div>
+          <div class="shard-slot-icon" id="shard-icon-2" title="TruX: Suspension Pivot">⚙️</div>
+          <div class="shard-slot-icon" id="shard-icon-3" title="Hubs: Dynamo Hubs">🌀</div>
+          <div class="shard-slot-icon" id="shard-icon-4" title="Core: Symbiote Seed">💎</div>
+          <div class="shard-slot-icon" id="shard-icon-5" title="aR: Illust AR Prism">👁️</div>
+          <div class="shard-slot-icon" id="shard-icon-6" title="Aura: Bioluminescent Resonance">✨</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="action-btn" id="mute-btn" title="Toggle Sound">
+          <span id="sound-icon">🔊</span> AUDIO
+        </button>
+        <button class="action-btn" id="nav-menu-btn" title="Main Menu">
+          ☰ MENU
+        </button>
+      </div>
+    </header>
+
+    <!-- Canvas Viewport -->
+    <main id="viewport">
+      <canvas id="game-canvas"></canvas>
+    </main>
+
+    <!-- Hub Screen / Mode Selector -->
+    <div class="overlay-screen" id="hub-screen">
+      <div class="hub-container">
+        <div class="hub-hero">
+          <h1>FuX: CHAOS ENGINE</h1>
+          <p>ONE FLUID BODY • THREE MINI-GAMES • THE COMPLETE GENESIS LOOP</p>
+        </div>
+
+        <!-- Campaign Mode Card -->
+        <div class="campaign-card" id="start-campaign-btn">
+          <div class="campaign-info">
+            <h2><span>🔥</span> THE GENESIS LOOP (CAMPAIGN)</h2>
+            <p>
+              The full canonical protocol journey: Recover 7 shards in the ICU AR Hunt &rarr;
+              Harmonize the ferrofluid symbiote in the Magic Mirror Box &rarr; Follow FuX's trail to find MiiE (Jay IRL) and FuXZero!
+            </p>
+          </div>
+          <div class="campaign-btn">LAUNCH FULL HUNT &rarr;</div>
+        </div>
+
+        <!-- 3 Mini-Games Cards Grid -->
+        <div class="mini-games-grid">
+          <!-- Game 1 -->
+          <div class="game-card" id="play-game1-btn">
+            <div>
+              <div class="game-card-header">
+                <span class="game-badge game1">MINI-GAME 1</span>
+                <span>📡</span>
+              </div>
+              <div class="game-card-title">ICU AR SHARD HUNT</div>
+              <div class="game-card-desc">
+                Deploy the augmented reality radar in New Orleans. Track signals, dodge patrolling nullifier drones, and extract the 7 vital shards: Board, Grip, TruX, Hubs, Core, aR, and Aura.
+              </div>
+            </div>
+            <div class="game-card-footer">
+              <span class="play-tag">PLAY SHARD HUNT &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Game 2 -->
+          <div class="game-card" id="play-game2-btn">
+            <div>
+              <div class="game-card-header">
+                <span class="game-badge game2">MINI-GAME 2</span>
+                <span>🔮</span>
+              </div>
+              <div class="game-card-title">MAGIC MIRROR BOX GENESIS</div>
+              <div class="game-card-desc">
+                Face the living ferrofluid entity. Modulate Low, Mid, and High audio frequencies across Calm, Stirring, Surging, and Unleashed moods. Touch the glass to soothe pressure points and fire the Genesis Spawn!
+              </div>
+            </div>
+            <div class="game-card-footer">
+              <span class="play-tag">ENTER MIRROR BOX &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Game 3 -->
+          <div class="game-card" id="play-game3-btn">
+            <div>
+              <div class="game-card-header">
+                <span class="game-badge game3">MINI-GAME 3</span>
+                <span>🛹</span>
+              </div>
+              <div class="game-card-title">THE TRAIL OF MIIE & FUXZERO</div>
+              <div class="game-card-desc">
+                Your FuX is bonded at birth! Listen to your symbiote's whispers and directional commands. Weave down neon streets, leap barriers, unleash chaos shockwaves, pursue FuXZero, and discover Jay IRL.
+              </div>
+            </div>
+            <div class="game-card-footer">
+              <span class="play-tag">CHASE THE TRAIL &rarr;</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Tools Row -->
+        <div class="tools-row">
+          <button class="tool-btn" id="open-sandbox-btn">
+            <span>🔬</span> WAVESCOPE / CHAOS LAB
+          </button>
+          <button class="tool-btn" id="open-codex-btn">
+            <span>📜</span> PROTOCOL CODEX & ART
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WaveScope Sandbox Panel -->
+    <div id="sandbox-panel" class="hidden">
+      <div class="sandbox-row">
+        <div class="slider-group">
+          <label>CHAOS LEVEL</label>
+          <input type="range" id="sb-chaos" min="0" max="100" value="45">
+        </div>
+        <div class="mood-selector">
+          <button class="mood-btn active" data-mood="calm">CALM</button>
+          <button class="mood-btn" data-mood="stirring">STIRRING</button>
+          <button class="mood-btn" data-mood="surging">SURGING</button>
+          <button class="mood-btn" data-mood="unleashed">UNLEASHED</button>
+        </div>
+        <button class="action-btn" id="sb-mic-btn">🎤 AUDIO INPUT</button>
+      </div>
+
+      <div class="sandbox-row">
+        <div class="slider-group">
+          <label>LOW (BASS)</label>
+          <input type="range" id="sb-low" min="0" max="1" step="0.05" value="0.4">
+        </div>
+        <div class="slider-group">
+          <label>MID (FLOW)</label>
+          <input type="range" id="sb-mid" min="0" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="slider-group">
+          <label>HIGH (SPIKES)</label>
+          <input type="range" id="sb-high" min="0" max="1" step="0.05" value="0.3">
+        </div>
+      </div>
+    </div>
+
+    <!-- Intermission Modal (Campaign Act Transitions) -->
+    <div class="overlay-screen hidden" id="intermission-modal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title" id="intermission-title">ACT COMPLETED</div>
+        </div>
+        <p id="intermission-desc" style="font-size: 13px; line-height: 1.6; color: #c0caf5;">
+          Description
+        </p>
+        <button class="campaign-btn" id="intermission-next-btn" style="align-self: flex-start; cursor: pointer; border: none;">
+          CONTINUE MISSION &rarr;
+        </button>
+      </div>
+    </div>
+
+    <!-- Spawn Packet Viewer Modal -->
+    <div class="overlay-screen hidden" id="spawn-modal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">ON-CHAIN SPAWN PACKET (SOLANA & ARWEAVE)</div>
+          <button class="close-btn" id="close-spawn-btn">&times;</button>
+        </div>
+        <div style="font-size: 11px; color: var(--border-neon-cyan); display: flex; flex-direction: column; gap: 4px;">
+          <div><strong>FuxEntity PDA:</strong> <span id="spawn-pda-view" style="color: #fff;"></span></div>
+          <div><strong>Event Hash (SHA-256):</strong> <span id="spawn-hash-view" style="color: var(--neon-lime);"></span></div>
+          <div><strong>Arweave Anchor:</strong> <span id="spawn-arweave-view" style="color: var(--neon-purple);"></span></div>
+        </div>
+        <div class="code-container" id="spawn-json-view">
+          Loading JSON...
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="action-btn active" id="copy-json-btn">📋 COPY CANONICAL JSON</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grand Victory Modal -->
+    <div class="overlay-screen hidden" id="victory-modal">
+      <div class="modal-dialog" style="text-align: center; border-color: var(--neon-lime);">
+        <div style="font-size: 40px;">🏆</div>
+        <h2 style="font-size: 24px; color: var(--neon-lime); letter-spacing: 2px;">THE TRINITY LOOP IS COMPLETE!</h2>
+        <p style="font-size: 13px; color: #fff; line-height: 1.6;">
+          You recovered all 7 shards, harmonized the living ferrofluid in the Magic Mirror Box,
+          followed FuX's commands through New Orleans, caught FuXZero, and met MiiE (Jay IRL) face-to-face!
+        </p>
+        <div style="background: rgba(0, 243, 255, 0.08); border: 1px solid var(--border-neon-cyan); border-radius: 6px; padding: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px; text-align: left;">
+          <div>TOTAL SCORE: <strong id="final-score" style="color: #fff;">0</strong></div>
+          <div>HUNT TIME: <strong id="final-time" style="color: #fff;">0s</strong></div>
+          <div>ENTITY VARIANT: <strong id="final-variant" style="color: var(--neon-purple);">Prime</strong></div>
+          <div>RARITY TIER: <strong id="final-rarity" style="color: var(--neon-lime);">MYTHIC</strong></div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 12px; margin-top: 10px;">
+          <button class="action-btn active" id="victory-view-spawn-btn">📜 VIEW ON-CHAIN PACKET</button>
+          <button class="action-btn" id="victory-hub-btn">RETURN TO HUB</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Protocol Codex & Concept Art Modal -->
+    <div class="overlay-screen hidden" id="codex-modal">
+      <div class="modal-dialog" style="max-width: 900px;">
+        <div class="modal-header">
+          <div class="modal-title">FUX CHAOS ENGINE: PROTOCOL CODEX</div>
+          <button class="close-btn" id="close-codex-btn">&times;</button>
+        </div>
+        <div style="font-size: 12px; line-height: 1.6; color: #c0caf5; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <h3 style="color: var(--neon-lime); margin-bottom: 4px;">THE ENTITY: FUX</h3>
+            <p>
+              FuX is the Chaos Engine — a living symbiote-like energy entity for the Magic Mirror Box:
+              a neon-lit UE5 cube holding a reactive being. One fluid body combining ferrofluid tension,
+              viscous symbiote motion, smoke peeling from the surface, and water-like currents rolling underneath.
+              Deep purple and toxic-lime bioluminescent veins pulse within a glossy black mass.
+            </p>
+          </div>
+
+          <div>
+            <h3 style="color: var(--border-neon-cyan); margin-bottom: 4px;">THE SEVEN GENESIS SHARDS</h3>
+            <ul style="padding-left: 20px; font-size: 11px;">
+              <li><strong>Board:</strong> Physical composite deck foundation & kinetic ground interface.</li>
+              <li><strong>Grip:</strong> Micro-perforated traction layer providing tactile neural feedback.</li>
+              <li><strong>TruX:</strong> Dual-axis turning pivot with electromagnetic ferro-bushings.</li>
+              <li><strong>Hubs:</strong> Brushless magnetic dynamo wheels capturing friction voltage.</li>
+              <li><strong>Core:</strong> Obsidian containment holding the dormant ferrofluid symbiote seed.</li>
+              <li><strong>aR:</strong> Augmented reality optical prism anchoring the entity to spatial coordinates.</li>
+              <li><strong>Aura:</strong> Dual-phase purple and toxic-lime optical emitter establishing the bond.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 style="color: var(--neon-purple); margin-bottom: 4px;">THE LOOP (PROTOCOL LAW I: IRREVERSIBLE CREATION)</h3>
+            <p style="font-size: 11px;">
+              1. Hunter finds 7 shards in the hunt zone.<br>
+              2. Spawns their unique FuX inside the Magic Mirror Box (Token-2022 PDA on Solana, immutable packet on Arweave). Bonded at birth.<br>
+              3. Hunter listens to their FuX — the FuX guides (commands) the hunter, not the other way around.<br>
+              4. The FuX's mission: find MiiE (Jay himself, IRL) and FuXZero (Agent Zero). Whoever finds Jay IRL wins the prizes!
+            </p>
+          </div>
+
+          <!-- Concept Art Gallery -->
+          <div>
+            <h3 style="color: #fff; margin-bottom: 8px;">CONCEPT ART & REFERENCE RENDERS</h3>
+            <div class="gallery-grid">
+              <div class="gallery-item">
+                <img src="concept-art/media-generation-symbiote-in-mirror-box-0-2a4acfbd-7cac-47a0-b6db-8002e66d6a0d.webp" alt="Symbiote in Mirror Box">
+                <div class="gallery-caption">Magic Mirror Box Containment Cube</div>
+              </div>
+              <div class="gallery-item">
+                <img src="concept-art/media-generation-fux-chaos-engine-ferrofluid-0-3225430a-5491-43c3-9470-28146795b331.webp" alt="Ferrofluid Spikes">
+                <div class="gallery-caption">Ferrofluid Magnetic Spikes</div>
+              </div>
+              <div class="gallery-item">
+                <img src="concept-art/media-generation-symbiote-entity-chaos-state-0-519fb68f-fab6-4819-abb4-5a29043e2ae9.webp" alt="Chaos State">
+                <div class="gallery-caption">Unleashed Chaos State</div>
+              </div>
+              <div class="gallery-item">
+                <img src="protocol/media-generation-fux-two-way-flow-0-adb84d6e-31e1-4666-8c61-5256a02b4886.webp" alt="Two-Way Flow">
+                <div class="gallery-caption">ICU &harr; Chaos Engine System Flow</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Virtual Touch Controls -->
+    <div id="mobile-touch-controls" style="display: none;">
+      <div class="touch-btn-group">
+        <button class="touch-circle-btn" id="touch-left">&larr;</button>
+        <button class="touch-circle-btn" id="touch-right">&rarr;</button>
+      </div>
+      <div class="touch-btn-group">
+        <button class="touch-circle-btn" id="touch-slide">&darr;</button>
+        <button class="touch-circle-btn" id="touch-jump">&uarr;</button>
+        <button class="touch-circle-btn burst" id="touch-burst">⚡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="src/audio.js"></script>
+  <script src="src/protocol.js"></script>
+  <script src="src/ferrofluid.js"></script>
+  <script src="src/game1_hunt.js"></script>
+  <script src="src/game2_box.js"></script>
+  <script src="src/game3_trail.js"></script>
+  <script src="src/sandbox.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>
